@@ -1,313 +1,313 @@
 do
-	local TweenService = game:GetService("TweenService")
-	local RunService = game:GetService("RunService")
-	local Lighting = game:GetService("Lighting")
-	local CoreGui = game:GetService("CoreGui")
-	local HttpService = game:GetService("HttpService")
+    local TweenService = game:GetService("TweenService")
+    local RunService = game:GetService("RunService")
+    local Lighting = game:GetService("Lighting")
+    local CoreGui = game:GetService("CoreGui")
+    local HttpService = game:GetService("HttpService")
 
-	local INK = Color3.new(1, 1, 1)
-	local MUTED = Color3.fromRGB(140, 140, 140)
-	local DARK = Color3.fromRGB(70, 70, 70)
-	local BG = Color3.new(0, 0, 0)
-	local NOISE = "!@#$%&*/\\|<>?=+~-_01"
-	local SPIN = { "|", "/", "-", "\\" }
+    local INK = Color3.new(1, 1, 1)
+    local MUTED = Color3.fromRGB(140, 140, 140)
+    local DARK = Color3.fromRGB(70, 70, 70)
+    local BG = Color3.new(0, 0, 0)
+    local NOISE = "!@#$%&*/\\|<>?=+~-_01"
+    local SPIN = { "|", "/", "-", "\\" }
 
-	local Glyphs = {
-		B = { " ____  ", "| __ ) ", "|  _ \\ ", "| |_) |", "|____/ " },
-		["."] = { "   ", "   ", "   ", " _ ", "(_)" },
-		A = { "    _    ", "   / \\   ", "  / _ \\  ", " / ___ \\ ", "/_/   \\_\\" },
-		[" "] = { "  ", "  ", "  ", "  ", "  " },
-		H = { " _   _ ", "| | | |", "| |_| |", "|  _  |", "|_| |_|" },
-		U = { " _   _ ", "| | | |", "| | | |", "| |_| |", " \\___/ " },
-	}
+    local Glyphs = {
+        B = { " ____  ", "| __ ) ", "|  _ \\ ", "| |_) |", "|____/ " },
+        ["."] = { "   ", "   ", "   ", " _ ", "(_)" },
+        A = { "    _    ", "   / \\   ", "  / _ \\  ", " / ___ \\ ", "/_/   \\_\\" },
+        [" "] = { "  ", "  ", "  ", "  ", "  " },
+        H = { " _   _ ", "| | | |", "| |_| |", "|  _  |", "|_| |_|" },
+        U = { " _   _ ", "| | | |", "| | | |", "| |_| |", " \\___/ " },
+    }
 
-	local function banner(text)
-		local rows = { "", "", "", "", "" }
-		for i = 1, #text do
-			local g = Glyphs[string.sub(text, i, i)]
-			for r = 1, 5 do rows[r] = rows[r] .. g[r] end
-		end
-		return rows
-	end
+    local function banner(text)
+        local rows = { "", "", "", "", "" }
+        for i = 1, #text do
+            local g = Glyphs[string.sub(text, i, i)]
+            for r = 1, 5 do rows[r] = rows[r] .. g[r] end
+        end
+        return rows
+    end
 
-	local ART = banner("B.A. HUB")
-	local Players = game:GetService("Players")
-	local Stats = game:GetService("Stats")
+    local ART = banner("B.A. HUB")
+    local Players = game:GetService("Players")
+    local Stats = game:GetService("Stats")
 
-	local function fnOk(f) return type(f) == "function" end
+    local function fnOk(f) return type(f) == "function" end
 
-	local STEPS = {
-		{ "executor", function()
-			local ok, name, ver = pcall(function() return identifyexecutor() end)
-			if ok and name then return string.lower(tostring(name) .. (ver and (" " .. tostring(ver)) or "")) end
-			return "unknown"
-		end },
-		{ "place", function()
-			return tostring(game.PlaceId)
-		end },
-		{ "player", function()
-			local p = Players.LocalPlayer
-			local hum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
-			local rig = hum and (hum.RigType == Enum.HumanoidRigType.R15 and "r15" or "r6") or "no char"
-			return string.lower(p.Name) .. " / " .. rig
-		end },
-		{ "drawing api", function()
-			return (type(Drawing) == "table" and fnOk(Drawing.new)) and "ok" or "missing"
-		end },
-		{ "http", function()
-			local req = fnOk(request) or fnOk(http_request) or (syn and fnOk(syn.request))
-			local get = pcall(function() return game.HttpGet end)
-			return (get and "httpget" or "no httpget") .. (req and " + request" or "")
-		end },
-		{ "fs", function()
-			return (fnOk(writefile) and fnOk(readfile)) and "ok" or "missing"
-		end },
-		{ "ping", function()
-			local ok, v = pcall(function() return Stats.Network.ServerStatsItem["Data Ping"]:GetValue() end)
-			return ok and string.format("%d ms", math.floor(v + 0.5)) or "n/a"
-		end },
-		{ "fps", function()
-			local n, t0 = 0, os.clock()
-			while os.clock() - t0 < 0.25 do RunService.RenderStepped:Wait(); n += 1 end
-			return string.format("%d", math.floor(n / (os.clock() - t0) + 0.5))
-		end },
-	}
+    local STEPS = {
+        { "executor", function()
+            local ok, name, ver = pcall(function() return identifyexecutor() end)
+            if ok and name then return string.lower(tostring(name) .. (ver and (" " .. tostring(ver)) or "")) end
+            return "unknown"
+        end },
+        { "place", function()
+            return tostring(game.PlaceId)
+        end },
+        { "player", function()
+            local p = Players.LocalPlayer
+            local hum = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+            local rig = hum and (hum.RigType == Enum.HumanoidRigType.R15 and "r15" or "r6") or "no char"
+            return string.lower(p.Name) .. " / " .. rig
+        end },
+        { "drawing api", function()
+            return (type(Drawing) == "table" and fnOk(Drawing.new)) and "ok" or "missing"
+        end },
+        { "http", function()
+            local req = fnOk(request) or fnOk(http_request) or (syn and fnOk(syn.request))
+            local get = pcall(function() return game.HttpGet end)
+            return (get and "httpget" or "no httpget") .. (req and " + request" or "")
+        end },
+        { "fs", function()
+            return (fnOk(writefile) and fnOk(readfile)) and "ok" or "missing"
+        end },
+        { "ping", function()
+            local ok, v = pcall(function() return Stats.Network.ServerStatsItem["Data Ping"]:GetValue() end)
+            return ok and string.format("%d ms", math.floor(v + 0.5)) or "n/a"
+        end },
+        { "fps", function()
+            local n, t0 = 0, os.clock()
+            while os.clock() - t0 < 0.25 do RunService.RenderStepped:Wait(); n += 1 end
+            return string.format("%d", math.floor(n / (os.clock() - t0) + 0.5))
+        end },
+    }
 
-	local function tween(inst, t, props, style, dir)
-		local tw = TweenService:Create(inst, TweenInfo.new(t, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out), props)
-		tw:Play()
-		return tw
-	end
+    local function tween(inst, t, props, style, dir)
+        local tw = TweenService:Create(inst, TweenInfo.new(t, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out), props)
+        tw:Play()
+        return tw
+    end
 
-	local function make(class, props, parent)
-		local inst = Instance.new(class)
-		for k, v in pairs(props) do inst[k] = v end
-		if parent then inst.Parent = parent end
-		return inst
-	end
+    local function make(class, props, parent)
+        local inst = Instance.new(class)
+        for k, v in pairs(props) do inst[k] = v end
+        if parent then inst.Parent = parent end
+        return inst
+    end
 
-	local function noiseChar()
-		local i = math.random(1, #NOISE)
-		return string.sub(NOISE, i, i)
-	end
+    local function noiseChar()
+        local i = math.random(1, #NOISE)
+        return string.sub(NOISE, i, i)
+    end
 
-	local function scramble(final, revealed, band)
-		local out = table.create(#final)
-		for i = 1, #final do
-			local c = string.sub(final, i, i)
-			if i <= revealed then
-				out[i] = c
-			elseif i <= revealed + band and c ~= " " then
-				out[i] = noiseChar()
-			elseif i <= revealed + band then
-				out[i] = math.random() < 0.3 and noiseChar() or " "
-			else
-				out[i] = " "
-			end
-		end
-		return table.concat(out)
-	end
+    local function scramble(final, revealed, band)
+        local out = table.create(#final)
+        for i = 1, #final do
+            local c = string.sub(final, i, i)
+            if i <= revealed then
+                out[i] = c
+            elseif i <= revealed + band and c ~= " " then
+                out[i] = noiseChar()
+            elseif i <= revealed + band then
+                out[i] = math.random() < 0.3 and noiseChar() or " "
+            else
+                out[i] = " "
+            end
+        end
+        return table.concat(out)
+    end
 
-	local function dissolve(final, keep)
-		local out = table.create(#final)
-		for i = 1, #final do
-			local c = string.sub(final, i, i)
-			local r = math.random()
-			if c == " " then
-				out[i] = " "
-			elseif r < keep then
-				out[i] = c
-			elseif r < keep + 0.15 then
-				out[i] = noiseChar()
-			else
-				out[i] = " "
-			end
-		end
-		return table.concat(out)
-	end
+    local function dissolve(final, keep)
+        local out = table.create(#final)
+        for i = 1, #final do
+            local c = string.sub(final, i, i)
+            local r = math.random()
+            if c == " " then
+                out[i] = " "
+            elseif r < keep then
+                out[i] = c
+            elseif r < keep + 0.15 then
+                out[i] = noiseChar()
+            else
+                out[i] = " "
+            end
+        end
+        return table.concat(out)
+    end
 
-	local function bar(pct, width)
-		local fill = math.floor(pct * width + 0.5)
-		return "[" .. string.rep("#", fill) .. string.rep(".", width - fill) .. "]"
-	end
+    local function bar(pct, width)
+        local fill = math.floor(pct * width + 0.5)
+        return "[" .. string.rep("#", fill) .. string.rep(".", width - fill) .. "]"
+    end
 
-	local function dots(label, width)
-		return label .. " " .. string.rep(".", math.max(width - #label, 2))
-	end
+    local function dots(label, width)
+        return label .. " " .. string.rep(".", math.max(width - #label, 2))
+    end
 
-	local parent = CoreGui
-	pcall(function() if gethui then parent = gethui() end end)
+    local parent = CoreGui
+    pcall(function() if gethui then parent = gethui() end end)
 
-	local gui = make("ScreenGui", {
-		Name = HttpService:GenerateGUID(false), ResetOnSpawn = false,
-		IgnoreGuiInset = true, DisplayOrder = 100000,
-	})
-	local dim = make("Frame", {
-		Size = UDim2.fromScale(1, 1), BackgroundColor3 = BG, BackgroundTransparency = 1, BorderSizePixel = 0,
-	}, gui)
-	local blur
-	pcall(function() blur = make("BlurEffect", { Name = HttpService:GenerateGUID(false), Size = 0 }, Lighting) end)
+    local gui = make("ScreenGui", {
+        Name = HttpService:GenerateGUID(false), ResetOnSpawn = false,
+        IgnoreGuiInset = true, DisplayOrder = 100000,
+    })
+    local dim = make("Frame", {
+        Size = UDim2.fromScale(1, 1), BackgroundColor3 = BG, BackgroundTransparency = 1, BorderSizePixel = 0,
+    }, gui)
+    local blur
+    pcall(function() blur = make("BlurEffect", { Name = HttpService:GenerateGUID(false), Size = 0 }, Lighting) end)
 
-	local scan = make("Frame", {
-		Size = UDim2.new(1, 0, 0, 2), Position = UDim2.fromScale(0, -0.02),
-		BackgroundColor3 = INK, BackgroundTransparency = 0.85, BorderSizePixel = 0,
-	}, gui)
+    local scan = make("Frame", {
+        Size = UDim2.new(1, 0, 0, 2), Position = UDim2.fromScale(0, -0.02),
+        BackgroundColor3 = INK, BackgroundTransparency = 0.85, BorderSizePixel = 0,
+    }, gui)
 
-	local holder = make("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(560, 300), BackgroundTransparency = 1,
-	}, gui)
-	local holderScale = make("UIScale", { Scale = 1 }, holder)
+    local holder = make("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(560, 300), BackgroundTransparency = 1,
+    }, gui)
+    local holderScale = make("UIScale", { Scale = 1 }, holder)
 
-	local LINE_H = 18
-	local artLabels = {}
-	for r = 1, #ART do
-		artLabels[r] = make("TextLabel", {
-			Position = UDim2.fromOffset(0, (r - 1) * LINE_H), Size = UDim2.new(1, 0, 0, LINE_H),
-			BackgroundTransparency = 1, Text = "", TextColor3 = INK,
-			Font = Enum.Font.Code, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center,
-		}, holder)
-	end
-	local artShadow = {}
-	for r = 1, #ART do
-		artShadow[r] = make("TextLabel", {
-			Position = UDim2.fromOffset(2, (r - 1) * LINE_H + 2), Size = UDim2.new(1, 0, 0, LINE_H),
-			BackgroundTransparency = 1, Text = "", TextColor3 = DARK, ZIndex = 0,
-			Font = Enum.Font.Code, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center,
-		}, holder)
-	end
+    local LINE_H = 18
+    local artLabels = {}
+    for r = 1, #ART do
+        artLabels[r] = make("TextLabel", {
+            Position = UDim2.fromOffset(0, (r - 1) * LINE_H), Size = UDim2.new(1, 0, 0, LINE_H),
+            BackgroundTransparency = 1, Text = "", TextColor3 = INK,
+            Font = Enum.Font.Code, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center,
+        }, holder)
+    end
+    local artShadow = {}
+    for r = 1, #ART do
+        artShadow[r] = make("TextLabel", {
+            Position = UDim2.fromOffset(2, (r - 1) * LINE_H + 2), Size = UDim2.new(1, 0, 0, LINE_H),
+            BackgroundTransparency = 1, Text = "", TextColor3 = DARK, ZIndex = 0,
+            Font = Enum.Font.Code, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center,
+        }, holder)
+    end
 
-	local ruleY = #ART * LINE_H + 10
-	local rule = make("TextLabel", {
-		Position = UDim2.fromOffset(0, ruleY), Size = UDim2.new(1, 0, 0, 14), BackgroundTransparency = 1,
-		Text = "", TextColor3 = MUTED, Font = Enum.Font.Code, TextSize = 14,
-	}, holder)
+    local ruleY = #ART * LINE_H + 10
+    local rule = make("TextLabel", {
+        Position = UDim2.fromOffset(0, ruleY), Size = UDim2.new(1, 0, 0, 14), BackgroundTransparency = 1,
+        Text = "", TextColor3 = MUTED, Font = Enum.Font.Code, TextSize = 14,
+    }, holder)
 
-	local LOG_X = 110
-	local logLabels = {}
-	for i = 1, #STEPS do
-		logLabels[i] = make("TextLabel", {
-			Position = UDim2.fromOffset(LOG_X, ruleY + 22 + (i - 1) * 16), Size = UDim2.new(1, -LOG_X, 0, 16),
-			BackgroundTransparency = 1, Text = "", TextColor3 = MUTED,
-			Font = Enum.Font.Code, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left,
-		}, holder)
-	end
+    local LOG_X = 110
+    local logLabels = {}
+    for i = 1, #STEPS do
+        logLabels[i] = make("TextLabel", {
+            Position = UDim2.fromOffset(LOG_X, ruleY + 22 + (i - 1) * 16), Size = UDim2.new(1, -LOG_X, 0, 16),
+            BackgroundTransparency = 1, Text = "", TextColor3 = MUTED,
+            Font = Enum.Font.Code, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left,
+        }, holder)
+    end
 
-	local progress = make("TextLabel", {
-		Position = UDim2.fromOffset(0, ruleY + 22 + #STEPS * 16 + 10), Size = UDim2.new(1, 0, 0, 18),
-		BackgroundTransparency = 1, Text = "", TextColor3 = INK,
-		Font = Enum.Font.Code, TextSize = 16,
-	}, holder)
+    local progress = make("TextLabel", {
+        Position = UDim2.fromOffset(0, ruleY + 22 + #STEPS * 16 + 10), Size = UDim2.new(1, 0, 0, 18),
+        BackgroundTransparency = 1, Text = "", TextColor3 = INK,
+        Font = Enum.Font.Code, TextSize = 16,
+    }, holder)
 
-	gui.Parent = parent
+    gui.Parent = parent
 
-	local function setArt(r, text)
-		artLabels[r].Text = text
-		artShadow[r].Text = text
-	end
+    local function setArt(r, text)
+        artLabels[r].Text = text
+        artShadow[r].Text = text
+    end
 
-	local function playScan()
-		scan.Position = UDim2.fromScale(0, -0.02)
-		tween(scan, 1.1, { Position = UDim2.fromScale(0, 1.02) }, Enum.EasingStyle.Linear)
-	end
+    local function playScan()
+        scan.Position = UDim2.fromScale(0, -0.02)
+        tween(scan, 1.1, { Position = UDim2.fromScale(0, 1.02) }, Enum.EasingStyle.Linear)
+    end
 
-	tween(dim, 0.5, { BackgroundTransparency = 0.25 })
-	if blur then tween(blur, 0.5, { Size = 18 }) end
-	playScan()
-	task.wait(0.35)
+    tween(dim, 0.5, { BackgroundTransparency = 0.25 })
+    if blur then tween(blur, 0.5, { Size = 18 }) end
+    playScan()
+    task.wait(0.35)
 
-	local width = #ART[1]
-	local band = 8
-	local revealTime = 1.3
-	local t0 = os.clock()
-	while true do
-		local t = os.clock() - t0
-		local done = true
-		for r = 1, #ART do
-			local lag = (r - 1) * 0.08
-			local f = math.clamp((t - lag) / revealTime, 0, 1)
-			local revealed = math.floor(f * (width + band))
-			setArt(r, scramble(ART[r], revealed, band))
-			if f < 1 then done = false end
-		end
-		if done then break end
-		RunService.RenderStepped:Wait()
-	end
-	for r = 1, #ART do setArt(r, ART[r]) end
+    local width = #ART[1]
+    local band = 8
+    local revealTime = 1.3
+    local t0 = os.clock()
+    while true do
+        local t = os.clock() - t0
+        local done = true
+        for r = 1, #ART do
+            local lag = (r - 1) * 0.08
+            local f = math.clamp((t - lag) / revealTime, 0, 1)
+            local revealed = math.floor(f * (width + band))
+            setArt(r, scramble(ART[r], revealed, band))
+            if f < 1 then done = false end
+        end
+        if done then break end
+        RunService.RenderStepped:Wait()
+    end
+    for r = 1, #ART do setArt(r, ART[r]) end
 
-	for i = 1, 3 do
-		for r = 1, #ART do artLabels[r].TextColor3 = i % 2 == 1 and MUTED or INK end
-		task.wait(0.05)
-	end
-	for r = 1, #ART do artLabels[r].TextColor3 = INK end
+    for i = 1, 3 do
+        for r = 1, #ART do artLabels[r].TextColor3 = i % 2 == 1 and MUTED or INK end
+        task.wait(0.05)
+    end
+    for r = 1, #ART do artLabels[r].TextColor3 = INK end
 
-	local ruleFull = "+" .. string.rep("-", width - 2) .. "+"
-	for i = 1, #ruleFull, 3 do
-		rule.Text = string.sub(ruleFull, 1, i)
-		task.wait(0.01)
-	end
-	rule.Text = ruleFull
+    local ruleFull = "+" .. string.rep("-", width - 2) .. "+"
+    for i = 1, #ruleFull, 3 do
+        rule.Text = string.sub(ruleFull, 1, i)
+        task.wait(0.01)
+    end
+    rule.Text = ruleFull
 
-	local total = #STEPS
-	for i, entry in ipairs(STEPS) do
-		local step, probe = entry[1], entry[2]
-		local label = "> " .. dots(step, 14)
-		for c = 1, #label do
-			logLabels[i].Text = string.sub(label, 1, c)
-			if c % 2 == 0 then task.wait(0.008) end
-		end
-		local result
-		task.spawn(function()
-			local ok, v = pcall(probe)
-			result = ok and tostring(v) or "error"
-		end)
-		local spinFor = 0.18
-		local s0 = os.clock()
-		local k = 0
-		while result == nil or os.clock() - s0 < spinFor do
-			k += 1
-			logLabels[i].Text = label .. " " .. SPIN[(k % #SPIN) + 1]
-			local pct = ((i - 1) + math.min((os.clock() - s0) / spinFor, 0.9)) / total
-			progress.Text = string.format("%s %3d%%", bar(pct, 28), math.floor(pct * 100))
-			task.wait(0.05)
-		end
-		logLabels[i].Text = label .. " " .. result
-		logLabels[i].TextColor3 = INK
-		tween(logLabels[i], 0.4, { TextColor3 = MUTED })
-	end
-	progress.Text = string.format("%s %3d%%", bar(1, 28), 100)
+    local total = #STEPS
+    for i, entry in ipairs(STEPS) do
+        local step, probe = entry[1], entry[2]
+        local label = "> " .. dots(step, 14)
+        for c = 1, #label do
+            logLabels[i].Text = string.sub(label, 1, c)
+            if c % 2 == 0 then task.wait(0.008) end
+        end
+        local result
+        task.spawn(function()
+            local ok, v = pcall(probe)
+            result = ok and tostring(v) or "error"
+        end)
+        local spinFor = 0.18
+        local s0 = os.clock()
+        local k = 0
+        while result == nil or os.clock() - s0 < spinFor do
+            k += 1
+            logLabels[i].Text = label .. " " .. SPIN[(k % #SPIN) + 1]
+            local pct = ((i - 1) + math.min((os.clock() - s0) / spinFor, 0.9)) / total
+            progress.Text = string.format("%s %3d%%", bar(pct, 28), math.floor(pct * 100))
+            task.wait(0.05)
+        end
+        logLabels[i].Text = label .. " " .. result
+        logLabels[i].TextColor3 = INK
+        tween(logLabels[i], 0.4, { TextColor3 = MUTED })
+    end
+    progress.Text = string.format("%s %3d%%", bar(1, 28), 100)
 
-	task.wait(0.15)
-	for i = 1, 4 do
-		progress.Text = i % 2 == 1 and "[ ready ]" or ""
-		task.wait(0.09)
-	end
-	progress.Text = "[ ready ]"
-	task.wait(0.35)
+    task.wait(0.15)
+    for i = 1, 4 do
+        progress.Text = i % 2 == 1 and "[ ready ]" or ""
+        task.wait(0.09)
+    end
+    progress.Text = "[ ready ]"
+    task.wait(0.35)
 
-	playScan()
-	tween(holderScale, 0.12, { Scale = 1.04 }, Enum.EasingStyle.Quad)
-	local d0 = os.clock()
-	local outTime = 0.55
-	while os.clock() - d0 < outTime do
-		local keep = 1 - (os.clock() - d0) / outTime
-		for r = 1, #ART do setArt(r, dissolve(ART[r], keep)) end
-		rule.Text = dissolve(ruleFull, keep)
-		for _, l in ipairs(logLabels) do l.TextTransparency = 1 - keep end
-		progress.TextTransparency = 1 - keep
-		RunService.RenderStepped:Wait()
-	end
-	for r = 1, #ART do setArt(r, "") end
-	rule.Text = ""
+    playScan()
+    tween(holderScale, 0.12, { Scale = 1.04 }, Enum.EasingStyle.Quad)
+    local d0 = os.clock()
+    local outTime = 0.55
+    while os.clock() - d0 < outTime do
+        local keep = 1 - (os.clock() - d0) / outTime
+        for r = 1, #ART do setArt(r, dissolve(ART[r], keep)) end
+        rule.Text = dissolve(ruleFull, keep)
+        for _, l in ipairs(logLabels) do l.TextTransparency = 1 - keep end
+        progress.TextTransparency = 1 - keep
+        RunService.RenderStepped:Wait()
+    end
+    for r = 1, #ART do setArt(r, "") end
+    rule.Text = ""
 
-	tween(holderScale, 0.3, { Scale = 0.9 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	tween(dim, 0.4, { BackgroundTransparency = 1 })
-	tween(scan, 0.3, { BackgroundTransparency = 1 })
-	if blur then tween(blur, 0.4, { Size = 0 }) end
-	task.wait(0.45)
+    tween(holderScale, 0.3, { Scale = 0.9 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+    tween(dim, 0.4, { BackgroundTransparency = 1 })
+    tween(scan, 0.3, { BackgroundTransparency = 1 })
+    if blur then tween(blur, 0.4, { Size = 0 }) end
+    task.wait(0.45)
 
-	gui:Destroy()
-	if blur then blur:Destroy() end
+    gui:Destroy()
+    if blur then blur:Destroy() end
 end
 
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/jakavup/didactic-robot/refs/heads/main/VIBECODING%20yeAHH"))()
@@ -393,9 +393,6 @@ local farmingQuidz      = false
 local farmingHiddenQuidz = false
 local masteryFarming     = false
 local masteryFarmed      = {}
-local fleeFromBear       = false
-local bearDangerRadius   = 40
-local bearFleeWait       = 4
 
 local currentDanceTrack = nil
 
@@ -1244,6 +1241,74 @@ local Window = Library:CreateWindow({
 
 Library:Notify("B.A. HUB loaded.", 3)
 
+if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+    local mParent
+    pcall(function() mParent = gethui and gethui() end)
+    local mGui = Instance.new("ScreenGui")
+    mGui.Name = HttpService:GenerateGUID(false)
+    mGui.ResetOnSpawn = false
+    mGui.IgnoreGuiInset = true
+    mGui.DisplayOrder = 100001
+    mGui.Parent = mParent or game:GetService("CoreGui")
+
+    local mBtn = Instance.new("TextButton")
+    mBtn.AnchorPoint = Vector2.new(1, 0)
+    mBtn.Position = UDim2.new(1, -12, 0, 12)
+    mBtn.Size = UDim2.fromOffset(44, 44)
+    mBtn.BackgroundColor3 = Color3.new(0, 0, 0)
+    mBtn.TextColor3 = Color3.new(1, 1, 1)
+    mBtn.Font = Enum.Font.Code
+    mBtn.TextSize = 18
+    mBtn.Text = "-"
+    mBtn.AutoButtonColor = false
+    mBtn.Parent = mGui
+    Instance.new("UICorner", mBtn).CornerRadius = UDim.new(0, 6)
+    local mStroke = Instance.new("UIStroke", mBtn)
+    mStroke.Color = Color3.new(1, 1, 1)
+    mStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+    local shown = true
+    local function setShown(v)
+        shown = v
+        pcall(function() Library:Toggle(v) end)
+        mBtn.Text = v and "-" or "B.A."
+        mBtn.Size = UDim2.fromOffset(v and 44 or 64, 44)
+    end
+
+    local mConns = {}
+    local dragInput, dragStart, startPos, moved
+    table.insert(mConns, mBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragInput, dragStart, startPos, moved = input, input.Position, mBtn.Position, false
+        end
+    end))
+    table.insert(mConns, UserInputService.InputChanged:Connect(function(input)
+        if not dragStart then return end
+        if input ~= dragInput and input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+        local d = input.Position - dragStart
+        if d.Magnitude > 8 then moved = true end
+        if moved then
+            mBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+        end
+    end))
+    table.insert(mConns, UserInputService.InputEnded:Connect(function(input)
+        if not dragStart then return end
+        if input ~= dragInput and input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+        dragStart = nil
+        if not moved then
+            if type(Library.Toggled) == "boolean" then shown = Library.Toggled end
+            setShown(not shown)
+        end
+    end))
+
+    if type(Library.OnUnload) == "function" then
+        Library:OnUnload(function()
+            for _, c in ipairs(mConns) do c:Disconnect() end
+            mGui:Destroy()
+        end)
+    end
+end
+
 local tabPlayer    = Window:AddTab("Player",       "user")
 local tabVisuals   = Window:AddTab("Local Player", "palette")
 local tabCombat    = Window:AddTab("Combat",       "sword")
@@ -1279,6 +1344,52 @@ local grpVisualsSettings  = tabVisuals:AddRightGroupbox("Settings")
 local grpMisc             = tabMisc:AddLeftGroupbox("Misc")
 local grpSubPlaces        = tabSubPlaces:AddLeftGroupbox("SubPlaces")
 local grpSubPlacesUnavail = tabSubPlaces:AddRightGroupbox("Unavailable SubPlaces")
+local grpAccess           = tabMisc:AddLeftGroupbox("Accessibility")
+
+local A = { thick = 1.5, text = 13 }
+grpAccess:AddSlider("A_Thick", {
+    Text = "ESP Line Thickness", Min = 1, Max = 6, Default = 1.5, Increment = 0.5,
+    Callback = function(v) A.thick = v end,
+})
+grpAccess:AddSlider("A_Text", {
+    Text = "ESP Text Size", Min = 10, Max = 30, Default = 13,
+    Callback = function(v) A.text = v end,
+})
+do
+    local scale = 1
+    local baseSize = setmetatable({}, { __mode = "k" })
+    local menuGuis = {}
+    local function isText(o)
+        return o:IsA("TextLabel") or o:IsA("TextButton") or o:IsA("TextBox")
+    end
+    local function applyText(o)
+        if not isText(o) or o.TextScaled then return end
+        if not baseSize[o] then baseSize[o] = o.TextSize end
+        o.TextSize = math.max(6, math.floor(baseSize[o] * scale + 0.5))
+    end
+    local function findMenuGuis()
+        local g = Library.ScreenGui
+        if typeof(g) == "Instance" and not menuGuis[g] then
+            menuGuis[g] = g.DescendantAdded:Connect(function(o) task.defer(applyText, o) end)
+        end
+    end
+    grpAccess:AddSlider("A_MenuText", {
+        Text = "Menu Text Size (%)", Min = 50, Max = 200, Default = 100, Increment = 5,
+        Callback = function(v)
+            scale = v / 100
+            findMenuGuis()
+            for g in pairs(menuGuis) do
+                for _, d in ipairs(g:GetDescendants()) do applyText(d) end
+            end
+        end,
+    })
+    if type(Library.OnUnload) == "function" then
+        Library:OnUnload(function()
+            for _, c in pairs(menuGuis) do c:Disconnect() end
+            for o, sz in pairs(baseSize) do pcall(function() o.TextSize = sz end) end
+        end)
+    end
+end
 
 grpPlayer:AddSlider("FOVSlider", {
     Text = "FOV", Min = 30, Max = 120, Default = 70,
@@ -1605,10 +1716,6 @@ grpFarmingQuidz:AddToggle("FarmHiddenQuidz", { Text = "Hidden Quidz Farm", Defau
 grpMasteryFarm:AddToggle("MasteryFarm", {
     Text = "Mastery Farm", Default = false,
     Callback = function(v) masteryFarming = v end,
-})
-grpMasteryFarm:AddToggle("TPAwayFromBear", {
-    Text = "TP Away from BEAR", Default = false,
-    Callback = function(v) fleeFromBear = v end,
 })
 
 grpBadges:AddButton({
@@ -2414,483 +2521,483 @@ end
 
 do
     local function startMusicPlayer()
-		local env = (getgenv and getgenv()) or _G
-		if env.__BA_MUSIC and type(env.__BA_MUSIC.Unload) == "function" then
-			pcall(env.__BA_MUSIC.Unload)
-		end
+        local env = (getgenv and getgenv()) or _G
+        if env.__BA_MUSIC and type(env.__BA_MUSIC.Unload) == "function" then
+            pcall(env.__BA_MUSIC.Unload)
+        end
 
-		local TweenService = game:GetService("TweenService")
-		local RunService = game:GetService("RunService")
-		local UserInputService = game:GetService("UserInputService")
-		local SoundService = game:GetService("SoundService")
-		local MarketplaceService = game:GetService("MarketplaceService")
-		local CoreGui = game:GetService("CoreGui")
-		local HttpService = game:GetService("HttpService")
+        local TweenService = game:GetService("TweenService")
+        local RunService = game:GetService("RunService")
+        local UserInputService = game:GetService("UserInputService")
+        local SoundService = game:GetService("SoundService")
+        local MarketplaceService = game:GetService("MarketplaceService")
+        local CoreGui = game:GetService("CoreGui")
+        local HttpService = game:GetService("HttpService")
 
-		local TOGGLE_KEY = Enum.KeyCode.RightAlt
-		local INK = Color3.new(1, 1, 1)
-		local MUTED = Color3.fromRGB(140, 140, 140)
-		local DARK = Color3.fromRGB(60, 60, 60)
-		local BG = Color3.new(0, 0, 0)
-		local BAD = Color3.fromRGB(255, 85, 85)
+        local TOGGLE_KEY = Enum.KeyCode.RightAlt
+        local INK = Color3.new(1, 1, 1)
+        local MUTED = Color3.fromRGB(140, 140, 140)
+        local DARK = Color3.fromRGB(60, 60, 60)
+        local BG = Color3.new(0, 0, 0)
+        local BAD = Color3.fromRGB(255, 85, 85)
 
-		local VIS_COLS = 48
-		local VIS_ROWS = 8
-		local LOG_LINES = 6
-		local BAR_W = 34
+        local VIS_COLS = 48
+        local VIS_ROWS = 8
+        local LOG_LINES = 6
+        local BAR_W = 34
 
-		local PRESET = {
-			{ id = 140158652733698, name = "bouncy trap house - oro loco" },
-			{ id = 114566674164773, name = "grind (gta-type rap beat) - free content lab" },
-			{ id = 80248349566150, name = "hip-hop/rap - black crown - colorart" },
-			{ id = 1838028467, name = "vip me - solomon bear" },
-			{ id = 87607872312751, name = "electronic pop track - jesayeee" },
-			{ id = 1837196544, name = "palm beach - andre paul charlier" },
-			{ id = 1837324500, name = "sunrise workout - boris popov" },
-			{ id = 136430619290614, name = "hyper ultra pop - track_n10" },
-			{ id = 140175169828824, name = "kawaii future pop - love sleep repeat" },
-			{ id = 1839900676, name = "in the hall of the mountain king - juice music" },
-			{ id = 119474756800883, name = "leaf village - blastii" },
-			{ id = 139732156978834, name = "boss battle - animeneax lofi oasis" },
-			{ id = 139666378376464, name = "skybreaker - anime girl vocal" },
-			{ id = 133141854343837, name = "battle in the crystal city - neo music for drawing lab" },
-			{ id = 139859604446651, name = "chaos is the beginning - mad-vf" },
-			{ id = 89592198209191, name = "crossing field (lofi) - knights of lofi" },
-			{ id = 138649427280723, name = "memento mori - action cop" },
-			{ id = 114213622974713, name = "the loneliest hour - chilled monkey lofi" },
-			{ id = 9046435309, name = "the still, sad music of humanity - bibliotheque" },
-			{ id = 1838635121, name = "sad end (solo piano) - romain paillot" },
-			{ id = 140627598377770, name = "i miss you - lofihub" },
-			{ id = 139563998613132, name = "shadows of what could have been - chilled monkey lofi" },
-			{ id = 140215257631273, name = "eclipse drift - synthwavesz" },
-			{ id = 107192747515288, name = "ocean drift - ronald hudkins" },
-		}
+        local PRESET = {
+            { id = 140158652733698, name = "bouncy trap house - oro loco" },
+            { id = 114566674164773, name = "grind (gta-type rap beat) - free content lab" },
+            { id = 80248349566150, name = "hip-hop/rap - black crown - colorart" },
+            { id = 1838028467, name = "vip me - solomon bear" },
+            { id = 87607872312751, name = "electronic pop track - jesayeee" },
+            { id = 1837196544, name = "palm beach - andre paul charlier" },
+            { id = 1837324500, name = "sunrise workout - boris popov" },
+            { id = 136430619290614, name = "hyper ultra pop - track_n10" },
+            { id = 140175169828824, name = "kawaii future pop - love sleep repeat" },
+            { id = 1839900676, name = "in the hall of the mountain king - juice music" },
+            { id = 119474756800883, name = "leaf village - blastii" },
+            { id = 139732156978834, name = "boss battle - animeneax lofi oasis" },
+            { id = 139666378376464, name = "skybreaker - anime girl vocal" },
+            { id = 133141854343837, name = "battle in the crystal city - neo music for drawing lab" },
+            { id = 139859604446651, name = "chaos is the beginning - mad-vf" },
+            { id = 89592198209191, name = "crossing field (lofi) - knights of lofi" },
+            { id = 138649427280723, name = "memento mori - action cop" },
+            { id = 114213622974713, name = "the loneliest hour - chilled monkey lofi" },
+            { id = 9046435309, name = "the still, sad music of humanity - bibliotheque" },
+            { id = 1838635121, name = "sad end (solo piano) - romain paillot" },
+            { id = 140627598377770, name = "i miss you - lofihub" },
+            { id = 139563998613132, name = "shadows of what could have been - chilled monkey lofi" },
+            { id = 140215257631273, name = "eclipse drift - synthwavesz" },
+            { id = 107192747515288, name = "ocean drift - ronald hudkins" },
+        }
 
-		local State = {
-			playlist = {},
-			index = 0,
-			loop = false,
-			shuffle = false,
-			volume = 0.5,
-			open = true,
-			dead = false,
-			loadToken = 0,
-			peak = 1,
-			bars = table.create(VIS_COLS, 0),
-			caps = table.create(VIS_COLS, 0),
-			capHold = table.create(VIS_COLS, 0),
-			history = {},
-			histPos = 0,
-		}
-		local Conns = {}
-		local function track(c) Conns[#Conns + 1] = c return c end
+        local State = {
+            playlist = {},
+            index = 0,
+            loop = false,
+            shuffle = false,
+            volume = 0.5,
+            open = true,
+            dead = false,
+            loadToken = 0,
+            peak = 1,
+            bars = table.create(VIS_COLS, 0),
+            caps = table.create(VIS_COLS, 0),
+            capHold = table.create(VIS_COLS, 0),
+            history = {},
+            histPos = 0,
+        }
+        local Conns = {}
+        local function track(c) Conns[#Conns + 1] = c return c end
 
-		local function tween(inst, t, props)
-			local tw = TweenService:Create(inst, TweenInfo.new(t, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props)
-			tw:Play()
-			return tw
-		end
+        local function tween(inst, t, props)
+            local tw = TweenService:Create(inst, TweenInfo.new(t, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props)
+            tw:Play()
+            return tw
+        end
 
-		local function make(class, props, parent)
-			local inst = Instance.new(class)
-			for k, v in pairs(props) do inst[k] = v end
-			if parent then inst.Parent = parent end
-			return inst
-		end
+        local function make(class, props, parent)
+            local inst = Instance.new(class)
+            for k, v in pairs(props) do inst[k] = v end
+            if parent then inst.Parent = parent end
+            return inst
+        end
 
-		local function clock(sec)
-			sec = math.max(0, math.floor(sec or 0))
-			return string.format("%02d:%02d", math.floor(sec / 60), sec % 60)
-		end
+        local function clock(sec)
+            sec = math.max(0, math.floor(sec or 0))
+            return string.format("%02d:%02d", math.floor(sec / 60), sec % 60)
+        end
 
-		local function fit(s, w)
-			if #s > w then return string.sub(s, 1, w - 3) .. "..." end
-			return s .. string.rep(" ", w - #s)
-		end
+        local function fit(s, w)
+            if #s > w then return string.sub(s, 1, w - 3) .. "..." end
+            return s .. string.rep(" ", w - #s)
+        end
 
-		local parent = CoreGui
-		pcall(function() if gethui then parent = gethui() end end)
+        local parent = CoreGui
+        pcall(function() if gethui then parent = gethui() end end)
 
-		local gui = make("ScreenGui", {
-			Name = HttpService:GenerateGUID(false), ResetOnSpawn = false,
-			IgnoreGuiInset = true, DisplayOrder = 99999,
-		})
+        local gui = make("ScreenGui", {
+            Name = HttpService:GenerateGUID(false), ResetOnSpawn = false,
+            IgnoreGuiInset = true, DisplayOrder = 99999,
+        })
 
-		local win = make("Frame", {
-			Size = UDim2.fromOffset(470, 380), Position = UDim2.new(0.5, -235, 0.5, -190),
-			BackgroundColor3 = BG, BorderSizePixel = 0,
-		}, gui)
-		make("UICorner", { CornerRadius = UDim.new(0, 6) }, win)
-		make("UIStroke", { Color = INK, Thickness = 1 }, win)
-		local winScale = make("UIScale", { Scale = 1 }, win)
+        local win = make("Frame", {
+            Size = UDim2.fromOffset(470, 380), Position = UDim2.new(0.5, -235, 0.5, -190),
+            BackgroundColor3 = BG, BorderSizePixel = 0,
+        }, gui)
+        make("UICorner", { CornerRadius = UDim.new(0, 6) }, win)
+        make("UIStroke", { Color = INK, Thickness = 1 }, win)
+        local winScale = make("UIScale", { Scale = 1 }, win)
 
-		local function label(props)
-			props.BackgroundTransparency = 1
-			props.Font = props.Font or Enum.Font.Code
-			props.TextSize = props.TextSize or 14
-			props.TextColor3 = props.TextColor3 or INK
-			props.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Left
-			props.TextYAlignment = props.TextYAlignment or Enum.TextYAlignment.Top
-			return make("TextLabel", props, win)
-		end
+        local function label(props)
+            props.BackgroundTransparency = 1
+            props.Font = props.Font or Enum.Font.Code
+            props.TextSize = props.TextSize or 14
+            props.TextColor3 = props.TextColor3 or INK
+            props.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Left
+            props.TextYAlignment = props.TextYAlignment or Enum.TextYAlignment.Top
+            return make("TextLabel", props, win)
+        end
 
-		local titleBar = label({
-			Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 18),
-			Text = "ba@hub:~$ ./music.exe", TextColor3 = MUTED,
-		})
-		label({
-			Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 18),
-			Text = "[rightalt]", TextColor3 = DARK, TextXAlignment = Enum.TextXAlignment.Right,
-		})
-		label({
-			Position = UDim2.fromOffset(10, 22), Size = UDim2.new(1, -20, 0, 14),
-			Text = string.rep("-", 62), TextColor3 = DARK,
-		})
+        local titleBar = label({
+            Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 18),
+            Text = "ba@hub:~$ ./music.exe", TextColor3 = MUTED,
+        })
+        label({
+            Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 18),
+            Text = "[rightalt]", TextColor3 = DARK, TextXAlignment = Enum.TextXAlignment.Right,
+        })
+        label({
+            Position = UDim2.fromOffset(10, 22), Size = UDim2.new(1, -20, 0, 14),
+            Text = string.rep("-", 62), TextColor3 = DARK,
+        })
 
-		local nowLabel = label({ Position = UDim2.fromOffset(10, 40), Size = UDim2.new(1, -20, 0, 16), Text = "" })
-		local infoLabel = label({ Position = UDim2.fromOffset(10, 56), Size = UDim2.new(1, -20, 0, 16), Text = "", TextColor3 = MUTED })
+        local nowLabel = label({ Position = UDim2.fromOffset(10, 40), Size = UDim2.new(1, -20, 0, 16), Text = "" })
+        local infoLabel = label({ Position = UDim2.fromOffset(10, 56), Size = UDim2.new(1, -20, 0, 16), Text = "", TextColor3 = MUTED })
 
-		local visLabel = label({
-			Position = UDim2.fromOffset(10, 80), Size = UDim2.new(1, -20, 0, VIS_ROWS * 14),
-			Text = "", TextSize = 14, LineHeight = 1, Font = Enum.Font.Code,
-		})
-		local visFloor = label({
-			Position = UDim2.fromOffset(10, 80 + VIS_ROWS * 14), Size = UDim2.new(1, -20, 0, 14),
-			Text = string.rep("=", VIS_COLS), TextColor3 = DARK,
-		})
+        local visLabel = label({
+            Position = UDim2.fromOffset(10, 80), Size = UDim2.new(1, -20, 0, VIS_ROWS * 14),
+            Text = "", TextSize = 14, LineHeight = 1, Font = Enum.Font.Code,
+        })
+        local visFloor = label({
+            Position = UDim2.fromOffset(10, 80 + VIS_ROWS * 14), Size = UDim2.new(1, -20, 0, 14),
+            Text = string.rep("=", VIS_COLS), TextColor3 = DARK,
+        })
 
-		local progLabel = label({ Position = UDim2.fromOffset(10, 212), Size = UDim2.new(1, -20, 0, 16), Text = "" })
+        local progLabel = label({ Position = UDim2.fromOffset(10, 212), Size = UDim2.new(1, -20, 0, 16), Text = "" })
 
-		local logLabel = label({
-			Position = UDim2.fromOffset(10, 236), Size = UDim2.new(1, -20, 0, LOG_LINES * 15),
-			Text = "", TextColor3 = MUTED, LineHeight = 1.05, RichText = true,
-		})
+        local logLabel = label({
+            Position = UDim2.fromOffset(10, 236), Size = UDim2.new(1, -20, 0, LOG_LINES * 15),
+            Text = "", TextColor3 = MUTED, LineHeight = 1.05, RichText = true,
+        })
 
-		label({
-			Position = UDim2.fromOffset(10, 334), Size = UDim2.new(1, -20, 0, 14),
-			Text = string.rep("-", 62), TextColor3 = DARK,
-		})
-		label({ Position = UDim2.fromOffset(10, 350), Size = UDim2.fromOffset(20, 18), Text = ">" })
-		local input = make("TextBox", {
-			Position = UDim2.fromOffset(24, 350), Size = UDim2.new(1, -34, 0, 18),
-			BackgroundTransparency = 1, Text = "", PlaceholderText = "type help",
-			PlaceholderColor3 = DARK, TextColor3 = INK, Font = Enum.Font.Code, TextSize = 14,
-			TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false,
-		}, win)
+        label({
+            Position = UDim2.fromOffset(10, 334), Size = UDim2.new(1, -20, 0, 14),
+            Text = string.rep("-", 62), TextColor3 = DARK,
+        })
+        label({ Position = UDim2.fromOffset(10, 350), Size = UDim2.fromOffset(20, 18), Text = ">" })
+        local input = make("TextBox", {
+            Position = UDim2.fromOffset(24, 350), Size = UDim2.new(1, -34, 0, 18),
+            BackgroundTransparency = 1, Text = "", PlaceholderText = "type help",
+            PlaceholderColor3 = DARK, TextColor3 = INK, Font = Enum.Font.Code, TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false,
+        }, win)
 
-		local sound = make("Sound", { Name = HttpService:GenerateGUID(false), Volume = State.volume }, SoundService)
+        local sound = make("Sound", { Name = HttpService:GenerateGUID(false), Volume = State.volume }, SoundService)
 
-		local logBuf = {}
-		local function esc(s)
-			return (string.gsub(s, "[<>&]", { ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" }))
-		end
-		local function log(msg, bad)
-			msg = esc(string.lower(msg))
-			if bad then msg = '<font color="#ff5555">' .. msg .. "</font>" end
-			logBuf[#logBuf + 1] = msg
-			while #logBuf > LOG_LINES do table.remove(logBuf, 1) end
-			logLabel.Text = table.concat(logBuf, "\n")
-		end
+        local logBuf = {}
+        local function esc(s)
+            return (string.gsub(s, "[<>&]", { ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" }))
+        end
+        local function log(msg, bad)
+            msg = esc(string.lower(msg))
+            if bad then msg = '<font color="#ff5555">' .. msg .. "</font>" end
+            logBuf[#logBuf + 1] = msg
+            while #logBuf > LOG_LINES do table.remove(logBuf, 1) end
+            logLabel.Text = table.concat(logBuf, "\n")
+        end
 
-		local function current()
-			return State.playlist[State.index]
-		end
+        local function current()
+            return State.playlist[State.index]
+        end
 
-		local function fetchName(entry)
-			task.spawn(function()
-				local ok, info = pcall(function() return MarketplaceService:GetProductInfo(entry.id) end)
-				if ok and type(info) == "table" and type(info.Name) == "string" then
-					entry.name = info.Name
-				end
-			end)
-		end
+        local function fetchName(entry)
+            task.spawn(function()
+                local ok, info = pcall(function() return MarketplaceService:GetProductInfo(entry.id) end)
+                if ok and type(info) == "table" and type(info.Name) == "string" then
+                    entry.name = info.Name
+                end
+            end)
+        end
 
-		local function playIndex(i)
-			local entry = State.playlist[i]
-			if not entry then log("no track " .. tostring(i), true) return end
-			State.index = i
-			State.loadToken += 1
-			local token = State.loadToken
-			sound:Stop()
-			sound.TimePosition = 0
-			sound.SoundId = "rbxassetid://" .. entry.id
-			log("loading " .. entry.id .. " ...")
-			task.spawn(function()
-				local t0 = os.clock()
-				while not sound.IsLoaded and os.clock() - t0 < 8 do
-					if token ~= State.loadToken or State.dead then return end
-					task.wait(0.1)
-				end
-				if token ~= State.loadToken or State.dead then return end
-				if not sound.IsLoaded or sound.TimeLength <= 0 then
-					log("failed: " .. entry.id .. " (private, removed or not audio)", true)
-					return
-				end
-				sound.Looped = State.loop
-				sound:Play()
-				log("playing [" .. i .. "] " .. entry.name)
-			end)
-		end
+        local function playIndex(i)
+            local entry = State.playlist[i]
+            if not entry then log("no track " .. tostring(i), true) return end
+            State.index = i
+            State.loadToken += 1
+            local token = State.loadToken
+            sound:Stop()
+            sound.TimePosition = 0
+            sound.SoundId = "rbxassetid://" .. entry.id
+            log("loading " .. entry.id .. " ...")
+            task.spawn(function()
+                local t0 = os.clock()
+                while not sound.IsLoaded and os.clock() - t0 < 8 do
+                    if token ~= State.loadToken or State.dead then return end
+                    task.wait(0.1)
+                end
+                if token ~= State.loadToken or State.dead then return end
+                if not sound.IsLoaded or sound.TimeLength <= 0 then
+                    log("failed: " .. entry.id .. " (private, removed or not audio)", true)
+                    return
+                end
+                sound.Looped = State.loop
+                sound:Play()
+                log("playing [" .. i .. "] " .. entry.name)
+            end)
+        end
 
-		local function nextIndex(dir)
-			local n = #State.playlist
-			if n == 0 then return nil end
-			if State.shuffle and n > 1 then
-				local r
-				repeat r = math.random(1, n) until r ~= State.index
-				return r
-			end
-			return ((State.index - 1 + dir) % n) + 1
-		end
+        local function nextIndex(dir)
+            local n = #State.playlist
+            if n == 0 then return nil end
+            if State.shuffle and n > 1 then
+                local r
+                repeat r = math.random(1, n) until r ~= State.index
+                return r
+            end
+            return ((State.index - 1 + dir) % n) + 1
+        end
 
-		track(sound.Ended:Connect(function()
-			if State.loop or State.dead then return end
-			local nxt = nextIndex(1)
-			if nxt then playIndex(nxt) end
-		end))
+        track(sound.Ended:Connect(function()
+            if State.loop or State.dead then return end
+            local nxt = nextIndex(1)
+            if nxt then playIndex(nxt) end
+        end))
 
-		local Commands = {}
-		Commands.help = function()
-			log("add <id>  play [n]  pause  resume  stop")
-			log("next  prev  vol <0-100>  seek <sec>")
-			log("loop  shuffle  list  rm <n>  clear  preset  cls  exit")
-		end
-		Commands.add = function(arg)
-			local id = tonumber(arg)
-			if not id then log("usage: add <id>", true) return end
-			local entry = { id = math.floor(id), name = tostring(math.floor(id)) }
-			State.playlist[#State.playlist + 1] = entry
-			fetchName(entry)
-			log("added [" .. #State.playlist .. "] " .. entry.id)
-			if State.index == 0 then playIndex(#State.playlist) end
-		end
-		Commands.play = function(arg)
-			local n = tonumber(arg)
-			if n then playIndex(math.floor(n)) return end
-			if current() then
-				if sound.IsLoaded and not sound.IsPlaying then sound:Resume() log("resumed") else playIndex(State.index) end
-			else
-				log("playlist empty, add <id>", true)
-			end
-		end
-		Commands.pause = function() sound:Pause() log("paused at " .. clock(sound.TimePosition)) end
-		Commands.resume = function() sound:Resume() log("resumed") end
-		Commands.stop = function() State.loadToken += 1 sound:Stop() log("stopped") end
-		Commands.next = function() local n = nextIndex(1) if n then playIndex(n) end end
-		Commands.prev = function() local n = nextIndex(-1) if n then playIndex(n) end end
-		Commands.vol = function(arg)
-			local v = tonumber(arg)
-			if not v then log("volume " .. math.floor(State.volume * 100)) return end
-			State.volume = math.clamp(v, 0, 100) / 100
-			sound.Volume = State.volume
-			log("volume " .. math.floor(State.volume * 100))
-		end
-		Commands.seek = function(arg)
-			local v = tonumber(arg)
-			if not v or not sound.IsLoaded then log("usage: seek <sec>", true) return end
-			sound.TimePosition = math.clamp(v, 0, sound.TimeLength)
-			log("seek " .. clock(sound.TimePosition))
-		end
-		Commands.loop = function()
-			State.loop = not State.loop
-			sound.Looped = State.loop
-			log("loop " .. (State.loop and "on" or "off"))
-		end
-		Commands.shuffle = function()
-			State.shuffle = not State.shuffle
-			log("shuffle " .. (State.shuffle and "on" or "off"))
-		end
-		Commands.list = function()
-			if #State.playlist == 0 then log("playlist empty") return end
-			for i, e in ipairs(State.playlist) do
-				log((i == State.index and "* " or "  ") .. "[" .. i .. "] " .. e.name)
-			end
-		end
-		Commands.rm = function(arg)
-			local n = tonumber(arg)
-			if not n or not State.playlist[n] then log("usage: rm <n>", true) return end
-			local e = table.remove(State.playlist, n)
-			if n == State.index then
-				State.loadToken += 1
-				sound:Stop()
-				State.index = 0
-			elseif n < State.index then
-				State.index -= 1
-			end
-			log("removed " .. e.name)
-		end
-		Commands.preset = function()
-			for _, t in ipairs(PRESET) do
-				State.playlist[#State.playlist + 1] = { id = t.id, name = t.name }
-			end
-			log("added " .. #PRESET .. " preset tracks")
-		end
-		Commands.clear = function()
-			State.loadToken += 1
-			sound:Stop()
-			State.playlist, State.index = {}, 0
-			log("playlist cleared")
-		end
-		Commands.cls = function()
-			logBuf = {}
-			logLabel.Text = ""
-		end
-		Commands.exit = function() env.__BA_MUSIC.Unload() end
+        local Commands = {}
+        Commands.help = function()
+            log("add <id>  play [n]  pause  resume  stop")
+            log("next  prev  vol <0-100>  seek <sec>")
+            log("loop  shuffle  list  rm <n>  clear  preset  cls  exit")
+        end
+        Commands.add = function(arg)
+            local id = tonumber(arg)
+            if not id then log("usage: add <id>", true) return end
+            local entry = { id = math.floor(id), name = tostring(math.floor(id)) }
+            State.playlist[#State.playlist + 1] = entry
+            fetchName(entry)
+            log("added [" .. #State.playlist .. "] " .. entry.id)
+            if State.index == 0 then playIndex(#State.playlist) end
+        end
+        Commands.play = function(arg)
+            local n = tonumber(arg)
+            if n then playIndex(math.floor(n)) return end
+            if current() then
+                if sound.IsLoaded and not sound.IsPlaying then sound:Resume() log("resumed") else playIndex(State.index) end
+            else
+                log("playlist empty, add <id>", true)
+            end
+        end
+        Commands.pause = function() sound:Pause() log("paused at " .. clock(sound.TimePosition)) end
+        Commands.resume = function() sound:Resume() log("resumed") end
+        Commands.stop = function() State.loadToken += 1 sound:Stop() log("stopped") end
+        Commands.next = function() local n = nextIndex(1) if n then playIndex(n) end end
+        Commands.prev = function() local n = nextIndex(-1) if n then playIndex(n) end end
+        Commands.vol = function(arg)
+            local v = tonumber(arg)
+            if not v then log("volume " .. math.floor(State.volume * 100)) return end
+            State.volume = math.clamp(v, 0, 100) / 100
+            sound.Volume = State.volume
+            log("volume " .. math.floor(State.volume * 100))
+        end
+        Commands.seek = function(arg)
+            local v = tonumber(arg)
+            if not v or not sound.IsLoaded then log("usage: seek <sec>", true) return end
+            sound.TimePosition = math.clamp(v, 0, sound.TimeLength)
+            log("seek " .. clock(sound.TimePosition))
+        end
+        Commands.loop = function()
+            State.loop = not State.loop
+            sound.Looped = State.loop
+            log("loop " .. (State.loop and "on" or "off"))
+        end
+        Commands.shuffle = function()
+            State.shuffle = not State.shuffle
+            log("shuffle " .. (State.shuffle and "on" or "off"))
+        end
+        Commands.list = function()
+            if #State.playlist == 0 then log("playlist empty") return end
+            for i, e in ipairs(State.playlist) do
+                log((i == State.index and "* " or "  ") .. "[" .. i .. "] " .. e.name)
+            end
+        end
+        Commands.rm = function(arg)
+            local n = tonumber(arg)
+            if not n or not State.playlist[n] then log("usage: rm <n>", true) return end
+            local e = table.remove(State.playlist, n)
+            if n == State.index then
+                State.loadToken += 1
+                sound:Stop()
+                State.index = 0
+            elseif n < State.index then
+                State.index -= 1
+            end
+            log("removed " .. e.name)
+        end
+        Commands.preset = function()
+            for _, t in ipairs(PRESET) do
+                State.playlist[#State.playlist + 1] = { id = t.id, name = t.name }
+            end
+            log("added " .. #PRESET .. " preset tracks")
+        end
+        Commands.clear = function()
+            State.loadToken += 1
+            sound:Stop()
+            State.playlist, State.index = {}, 0
+            log("playlist cleared")
+        end
+        Commands.cls = function()
+            logBuf = {}
+            logLabel.Text = ""
+        end
+        Commands.exit = function() env.__BA_MUSIC.Unload() end
 
-		local function run(line)
-			line = string.match(line, "^%s*(.-)%s*$")
-			if line == "" then return end
-			State.history[#State.history + 1] = line
-			State.histPos = #State.history + 1
-			log("> " .. line)
-			local cmd, arg = string.match(line, "^(%S+)%s*(.*)$")
-			local fn = Commands[string.lower(cmd)]
-			if fn then
-				local ok, err = pcall(fn, arg)
-				if not ok then log("error: " .. tostring(err), true) end
-			else
-				log("unknown command: " .. cmd, true)
-			end
-		end
+        local function run(line)
+            line = string.match(line, "^%s*(.-)%s*$")
+            if line == "" then return end
+            State.history[#State.history + 1] = line
+            State.histPos = #State.history + 1
+            log("> " .. line)
+            local cmd, arg = string.match(line, "^(%S+)%s*(.*)$")
+            local fn = Commands[string.lower(cmd)]
+            if fn then
+                local ok, err = pcall(fn, arg)
+                if not ok then log("error: " .. tostring(err), true) end
+            else
+                log("unknown command: " .. cmd, true)
+            end
+        end
 
-		track(input.FocusLost:Connect(function(enter)
-			if not enter then return end
-			local line = input.Text
-			input.Text = ""
-			run(line)
-			task.defer(function() if not State.dead and State.open then input:CaptureFocus() end end)
-		end))
+        track(input.FocusLost:Connect(function(enter)
+            if not enter then return end
+            local line = input.Text
+            input.Text = ""
+            run(line)
+            task.defer(function() if not State.dead and State.open then input:CaptureFocus() end end)
+        end))
 
-		track(UserInputService.InputBegan:Connect(function(io)
-			if State.dead then return end
-			if io.KeyCode == TOGGLE_KEY then
-				State.open = not State.open
-				if State.open then
-					win.Visible = true
-					winScale.Scale = 0.95
-					tween(winScale, 0.2, { Scale = 1 })
-				else
-					win.Visible = false
-					input:ReleaseFocus()
-				end
-			elseif input:IsFocused() and #State.history > 0 then
-				if io.KeyCode == Enum.KeyCode.Up then
-					State.histPos = math.max(1, State.histPos - 1)
-					input.Text = State.history[State.histPos]
-					input.CursorPosition = #input.Text + 1
-				elseif io.KeyCode == Enum.KeyCode.Down then
-					State.histPos = math.min(#State.history + 1, State.histPos + 1)
-					input.Text = State.history[State.histPos] or ""
-					input.CursorPosition = #input.Text + 1
-				end
-			end
-		end))
+        track(UserInputService.InputBegan:Connect(function(io)
+            if State.dead then return end
+            if io.KeyCode == TOGGLE_KEY then
+                State.open = not State.open
+                if State.open then
+                    win.Visible = true
+                    winScale.Scale = 0.95
+                    tween(winScale, 0.2, { Scale = 1 })
+                else
+                    win.Visible = false
+                    input:ReleaseFocus()
+                end
+            elseif input:IsFocused() and #State.history > 0 then
+                if io.KeyCode == Enum.KeyCode.Up then
+                    State.histPos = math.max(1, State.histPos - 1)
+                    input.Text = State.history[State.histPos]
+                    input.CursorPosition = #input.Text + 1
+                elseif io.KeyCode == Enum.KeyCode.Down then
+                    State.histPos = math.min(#State.history + 1, State.histPos + 1)
+                    input.Text = State.history[State.histPos] or ""
+                    input.CursorPosition = #input.Text + 1
+                end
+            end
+        end))
 
-		local dragging, dragStart, startPos
-		track(titleBar.InputBegan:Connect(function(io)
-			if io.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging, dragStart, startPos = true, io.Position, win.Position
-			end
-		end))
-		track(UserInputService.InputChanged:Connect(function(io)
-			if dragging and io.UserInputType == Enum.UserInputType.MouseMovement then
-				local d = io.Position - dragStart
-				win.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
-			end
-		end))
-		track(UserInputService.InputEnded:Connect(function(io)
-			if io.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-		end))
+        local dragging, dragStart, startPos
+        track(titleBar.InputBegan:Connect(function(io)
+            if io.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging, dragStart, startPos = true, io.Position, win.Position
+            end
+        end))
+        track(UserInputService.InputChanged:Connect(function(io)
+            if dragging and io.UserInputType == Enum.UserInputType.MouseMovement then
+                local d = io.Position - dragStart
+                win.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+            end
+        end))
+        track(UserInputService.InputEnded:Connect(function(io)
+            if io.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+        end))
 
-		local SPIN = { "|", "/", "-", "\\" }
-		local spinK, spinT = 0, 0
-		local rowBuf = table.create(VIS_ROWS)
+        local SPIN = { "|", "/", "-", "\\" }
+        local spinK, spinT = 0, 0
+        local rowBuf = table.create(VIS_ROWS)
 
-		track(RunService.RenderStepped:Connect(function(dt)
-			if State.dead or not State.open then return end
-			local entry = current()
-			local playing = sound.IsPlaying
-			local loaded = sound.IsLoaded and sound.TimeLength > 0
+        track(RunService.RenderStepped:Connect(function(dt)
+            if State.dead or not State.open then return end
+            local entry = current()
+            local playing = sound.IsPlaying
+            local loaded = sound.IsLoaded and sound.TimeLength > 0
 
-			spinT += dt
-			if spinT > 0.1 then spinT = 0 spinK += 1 end
-			local status = playing and ">>" or (entry and not loaded and SPIN[(spinK % 4) + 1] .. " " or "||")
-			nowLabel.Text = fit(status .. " " .. (entry and entry.name or "nothing queued"), 60)
-			infoLabel.Text = string.format("track %d/%d   vol %3d%%   loop %s   shuffle %s",
-				State.index, #State.playlist, math.floor(State.volume * 100),
-				State.loop and "on " or "off", State.shuffle and "on " or "off")
+            spinT += dt
+            if spinT > 0.1 then spinT = 0 spinK += 1 end
+            local status = playing and ">>" or (entry and not loaded and SPIN[(spinK % 4) + 1] .. " " or "||")
+            nowLabel.Text = fit(status .. " " .. (entry and entry.name or "nothing queued"), 60)
+            infoLabel.Text = string.format("track %d/%d   vol %3d%%   loop %s   shuffle %s",
+                State.index, #State.playlist, math.floor(State.volume * 100),
+                State.loop and "on " or "off", State.shuffle and "on " or "off")
 
-			local loud = playing and sound.PlaybackLoudness or 0
-			State.peak = math.max(State.peak * (1 - dt * 0.15), loud, 1)
-			local level = loud / State.peak
-			local now = os.clock()
-			for c = 1, VIS_COLS do
-				local x = (c - 1) / (VIS_COLS - 1)
-				local shape = 1 - 0.45 * x
-				local wobble = 0.55 + 0.45 * (math.noise(c * 0.37, now * 2.3) + 0.5)
-				local target = math.clamp(level * shape * wobble, 0, 1)
-				local cur = State.bars[c]
-				if target > cur then cur += (target - cur) * math.min(dt * 25, 1)
-				else cur -= math.min(cur, dt * 1.6) end
-				State.bars[c] = cur
-				if cur >= State.caps[c] then
-					State.caps[c] = cur
-					State.capHold[c] = 0.4
-				else
-					State.capHold[c] -= dt
-					if State.capHold[c] <= 0 then State.caps[c] = math.max(0, State.caps[c] - dt * 0.8) end
-				end
-			end
-			for r = VIS_ROWS, 1, -1 do
-				local row = table.create(VIS_COLS)
-				local lo = (r - 1) / VIS_ROWS
-				local hi = r / VIS_ROWS
-				for c = 1, VIS_COLS do
-					local v, cap = State.bars[c], State.caps[c]
-					if v >= hi then
-						row[c] = r > VIS_ROWS * 0.75 and "#" or (r > VIS_ROWS * 0.4 and "|" or ":")
-					elseif v > lo then
-						row[c] = "."
-					elseif cap > lo and cap <= hi and cap > 0.02 then
-						row[c] = "-"
-					else
-						row[c] = " "
-					end
-				end
-				rowBuf[VIS_ROWS - r + 1] = table.concat(row)
-			end
-			visLabel.Text = table.concat(rowBuf, "\n")
+            local loud = playing and sound.PlaybackLoudness or 0
+            State.peak = math.max(State.peak * (1 - dt * 0.15), loud, 1)
+            local level = loud / State.peak
+            local now = os.clock()
+            for c = 1, VIS_COLS do
+                local x = (c - 1) / (VIS_COLS - 1)
+                local shape = 1 - 0.45 * x
+                local wobble = 0.55 + 0.45 * (math.noise(c * 0.37, now * 2.3) + 0.5)
+                local target = math.clamp(level * shape * wobble, 0, 1)
+                local cur = State.bars[c]
+                if target > cur then cur += (target - cur) * math.min(dt * 25, 1)
+                else cur -= math.min(cur, dt * 1.6) end
+                State.bars[c] = cur
+                if cur >= State.caps[c] then
+                    State.caps[c] = cur
+                    State.capHold[c] = 0.4
+                else
+                    State.capHold[c] -= dt
+                    if State.capHold[c] <= 0 then State.caps[c] = math.max(0, State.caps[c] - dt * 0.8) end
+                end
+            end
+            for r = VIS_ROWS, 1, -1 do
+                local row = table.create(VIS_COLS)
+                local lo = (r - 1) / VIS_ROWS
+                local hi = r / VIS_ROWS
+                for c = 1, VIS_COLS do
+                    local v, cap = State.bars[c], State.caps[c]
+                    if v >= hi then
+                        row[c] = r > VIS_ROWS * 0.75 and "#" or (r > VIS_ROWS * 0.4 and "|" or ":")
+                    elseif v > lo then
+                        row[c] = "."
+                    elseif cap > lo and cap <= hi and cap > 0.02 then
+                        row[c] = "-"
+                    else
+                        row[c] = " "
+                    end
+                end
+                rowBuf[VIS_ROWS - r + 1] = table.concat(row)
+            end
+            visLabel.Text = table.concat(rowBuf, "\n")
 
-			if loaded then
-				local pct = math.clamp(sound.TimePosition / sound.TimeLength, 0, 1)
-				local fill = math.floor(pct * BAR_W + 0.5)
-				local head = fill < BAR_W and ">" or ""
-				progLabel.Text = string.format("[%s%s%s] %s / %s",
-					string.rep("=", math.max(fill - #head, 0)), head, string.rep("-", BAR_W - fill),
-					clock(sound.TimePosition), clock(sound.TimeLength))
-			else
-				progLabel.Text = "[" .. string.rep("-", BAR_W) .. "] --:-- / --:--"
-			end
-		end))
+            if loaded then
+                local pct = math.clamp(sound.TimePosition / sound.TimeLength, 0, 1)
+                local fill = math.floor(pct * BAR_W + 0.5)
+                local head = fill < BAR_W and ">" or ""
+                progLabel.Text = string.format("[%s%s%s] %s / %s",
+                    string.rep("=", math.max(fill - #head, 0)), head, string.rep("-", BAR_W - fill),
+                    clock(sound.TimePosition), clock(sound.TimeLength))
+            else
+                progLabel.Text = "[" .. string.rep("-", BAR_W) .. "] --:-- / --:--"
+            end
+        end))
 
-		local function Unload()
-			if State.dead then return end
-			State.dead = true
-			State.loadToken += 1
-			for _, c in ipairs(Conns) do pcall(function() c:Disconnect() end) end
-			pcall(function() sound:Stop() sound:Destroy() end)
-			pcall(function() gui:Destroy() end)
-			env.__BA_MUSIC = nil
-		end
+        local function Unload()
+            if State.dead then return end
+            State.dead = true
+            State.loadToken += 1
+            for _, c in ipairs(Conns) do pcall(function() c:Disconnect() end) end
+            pcall(function() sound:Stop() sound:Destroy() end)
+            pcall(function() gui:Destroy() end)
+            env.__BA_MUSIC = nil
+        end
 
-		env.__BA_MUSIC = { Unload = Unload, Run = run }
-		gui.Parent = parent
-		winScale.Scale = 0.95
-		tween(winScale, 0.25, { Scale = 1 })
-		for _, t in ipairs(PRESET) do
-			State.playlist[#State.playlist + 1] = { id = t.id, name = t.name }
-		end
-		log("music.exe ready. " .. #State.playlist .. " tracks loaded. type help")
+        env.__BA_MUSIC = { Unload = Unload, Run = run }
+        gui.Parent = parent
+        winScale.Scale = 0.95
+        tween(winScale, 0.25, { Scale = 1 })
+        for _, t in ipairs(PRESET) do
+            State.playlist[#State.playlist + 1] = { id = t.id, name = t.name }
+        end
+        log("music.exe ready. " .. #State.playlist .. " tracks loaded. type help")
     end
 
     local function stopMusicPlayer()
@@ -3459,530 +3566,530 @@ do
 end
 
 do
-	local V = {
-		chamsOn = false,
-		layered = false,
-		style = "Fill",
-		alpha = 0.5,
-		pulse = false,
-		rainbow = false,
-		target = "Everyone",
-		maxDist = 2500,
-		budget = 30,
-		visColor = Color3.fromRGB(80, 255, 120),
-		hidColor = Color3.fromRGB(255, 60, 80),
-		teamColors = false,
-		bearColor = Color3.fromRGB(255, 60, 80),
-		survColor = Color3.fromRGB(0, 230, 255),
-		itemOn = false,
-		itemCount = 8,
-		itemDist = 300,
-		selfOn = false,
-		selfColor = Color3.fromRGB(0, 230, 255),
-		selfMaterial = "Keep",
-		nightOn = false,
-		ccOn = false,
-		sat = 0.3,
-		con = 0.1,
-		bri = 0,
-		tint = Color3.new(1, 1, 1),
-		bloomOn = false,
-		thirdOn = false,
-		thirdDist = 12,
-		vigOn = false,
-		vigRadius = 60,
-		cham = {},
-		itemCham = {},
-		selfCham = nil,
-		selfSaved = setmetatable({}, { __mode = "k" }),
-		night = nil,
-		cc = nil,
-		bloom = nil,
-		third = nil,
-		vig = nil,
-		warn = nil,
-		conns = {},
-		dead = false,
-	}
+    local V = {
+        chamsOn = false,
+        layered = false,
+        style = "Fill",
+        alpha = 0.5,
+        pulse = false,
+        rainbow = false,
+        target = "Everyone",
+        maxDist = 2500,
+        budget = 30,
+        visColor = Color3.fromRGB(80, 255, 120),
+        hidColor = Color3.fromRGB(255, 60, 80),
+        teamColors = false,
+        bearColor = Color3.fromRGB(255, 60, 80),
+        survColor = Color3.fromRGB(0, 230, 255),
+        itemOn = false,
+        itemCount = 8,
+        itemDist = 300,
+        selfOn = false,
+        selfColor = Color3.fromRGB(0, 230, 255),
+        selfMaterial = "Keep",
+        nightOn = false,
+        ccOn = false,
+        sat = 0.3,
+        con = 0.1,
+        bri = 0,
+        tint = Color3.new(1, 1, 1),
+        bloomOn = false,
+        thirdOn = false,
+        thirdDist = 12,
+        vigOn = false,
+        vigRadius = 60,
+        cham = {},
+        itemCham = {},
+        selfCham = nil,
+        selfSaved = setmetatable({}, { __mode = "k" }),
+        night = nil,
+        cc = nil,
+        bloom = nil,
+        third = nil,
+        vig = nil,
+        warn = nil,
+        conns = {},
+        dead = false,
+    }
 
-	V.parent = (function()
-		local ok, h = pcall(function() return gethui and gethui() end)
-		return (ok and h) or game:GetService("CoreGui")
-	end)()
+    V.parent = (function()
+        local ok, h = pcall(function() return gethui and gethui() end)
+        return (ok and h) or game:GetService("CoreGui")
+    end)()
 
-	V.selfMaterials = {
-		ForceField = Enum.Material.ForceField,
-		Neon = Enum.Material.Neon,
-		Glass = Enum.Material.Glass,
-	}
+    V.selfMaterials = {
+        ForceField = Enum.Material.ForceField,
+        Neon = Enum.Material.Neon,
+        Glass = Enum.Material.Glass,
+    }
 
-	function V.safe(fn, ...)
-		local ok, err = pcall(fn, ...)
-		if not ok then warn("[ba visuals] " .. tostring(err)) end
-	end
+    function V.safe(fn, ...)
+        local ok, err = pcall(fn, ...)
+        if not ok then warn("[ba visuals] " .. tostring(err)) end
+    end
 
-	function V.pulseFactor(now)
-		if V.pulse then return 0.65 + 0.35 * math.sin(now * 3) end
-		return 1
-	end
+    function V.pulseFactor(now)
+        if V.pulse then return 0.65 + 0.35 * math.sin(now * 3) end
+        return 1
+    end
 
-	function V.tone(color, now)
-		if V.rainbow then return Color3.fromHSV((now * 0.2) % 1, 0.85, 1) end
-		return color
-	end
+    function V.tone(color, now)
+        if V.rainbow then return Color3.fromHSV((now * 0.2) % 1, 0.85, 1) end
+        return color
+    end
 
-	function V.newHighlight(depth)
-		local h = Instance.new("Highlight")
-		h.DepthMode = depth
-		h.Parent = V.parent
-		return h
-	end
+    function V.newHighlight(depth)
+        local h = Instance.new("Highlight")
+        h.DepthMode = depth
+        h.Parent = V.parent
+        return h
+    end
 
-	function V.paint(h, color, style, alpha, pulse)
-		local a = alpha * pulse
-		if style == "Fill" then
-			h.FillColor, h.FillTransparency = color, 1 - a
-			h.OutlineColor, h.OutlineTransparency = Color3.new(0, 0, 0), 0
-		elseif style == "Glow" then
-			h.FillColor, h.FillTransparency = color, 0.85
-			h.OutlineColor, h.OutlineTransparency = color, (1 - pulse) * 0.6
-		else
-			h.FillColor, h.FillTransparency = color, 1
-			h.OutlineColor, h.OutlineTransparency = color, (1 - pulse) * 0.6
-		end
-	end
+    function V.paint(h, color, style, alpha, pulse)
+        local a = alpha * pulse
+        if style == "Fill" then
+            h.FillColor, h.FillTransparency = color, 1 - a
+            h.OutlineColor, h.OutlineTransparency = Color3.new(0, 0, 0), 0
+        elseif style == "Glow" then
+            h.FillColor, h.FillTransparency = color, 0.85
+            h.OutlineColor, h.OutlineTransparency = color, (1 - pulse) * 0.6
+        else
+            h.FillColor, h.FillTransparency = color, 1
+            h.OutlineColor, h.OutlineTransparency = color, (1 - pulse) * 0.6
+        end
+    end
 
-	function V.killEntry(entry)
-		if not entry then return end
-		for _, h in pairs(entry) do
-			pcall(function() h:Destroy() end)
-		end
-	end
+    function V.killEntry(entry)
+        if not entry then return end
+        for _, h in pairs(entry) do
+            pcall(function() h:Destroy() end)
+        end
+    end
 
-	function V.isBear(p)
-		return p.Team ~= nil and p.Team.Name == "Bear"
-	end
+    function V.isBear(p)
+        return p.Team ~= nil and p.Team.Name == "Bear"
+    end
 
-	function V.origin()
-		local cam = workspace.CurrentCamera
-		return cam and cam.CFrame.Position
-	end
+    function V.origin()
+        local cam = workspace.CurrentCamera
+        return cam and cam.CFrame.Position
+    end
 
-	function V.enemyStep(now)
-		local want = {}
-		if V.chamsOn then
-			local origin = V.origin()
-			local budget = V.budget - (V.selfOn and 1 or 0) - (V.itemOn and V.itemCount or 0)
-			local per = V.layered and 2 or 1
-			local cands = {}
-			for _, p in ipairs(Players:GetPlayers()) do
-				if p ~= player then
-					local isB = V.isBear(p)
-					local teamOk = V.target == "Everyone" or (V.target == "Bears" and isB) or (V.target == "Survivors" and not isB)
-					local char = p.Character
-					local hrp = char and char:FindFirstChild("HumanoidRootPart")
-					local hum = char and char:FindFirstChildOfClass("Humanoid")
-					if teamOk and hrp and hum and hum.Health > 0 then
-						local d = origin and (hrp.Position - origin).Magnitude or 0
-						if d <= V.maxDist then
-							cands[#cands + 1] = { p = p, char = char, d = d, bear = isB }
-						end
-					end
-				end
-			end
-			table.sort(cands, function(a, b) return a.d < b.d end)
-			local pulse = V.pulseFactor(now)
-			local used = 0
-			for _, c in ipairs(cands) do
-				if used + per > budget then break end
-				used += per
-				want[c.p] = true
-				local entry = V.cham[c.p]
-				if not entry or not entry.main or not entry.main.Parent then
-					V.killEntry(entry)
-					entry = { main = V.newHighlight(Enum.HighlightDepthMode.AlwaysOnTop) }
-					V.cham[c.p] = entry
-				end
-				if V.layered and (not entry.over or not entry.over.Parent) then
-					entry.over = V.newHighlight(Enum.HighlightDepthMode.Occluded)
-				elseif not V.layered and entry.over then
-					pcall(function() entry.over:Destroy() end)
-					entry.over = nil
-				end
-				if entry.main.Adornee ~= c.char then entry.main.Adornee = c.char end
-				if entry.over and entry.over.Adornee ~= c.char then entry.over.Adornee = c.char end
-				local baseCol = V.visColor
-				if V.teamColors then baseCol = c.bear and V.bearColor or V.survColor end
-				local visC = V.tone(baseCol, now)
-				local hidC = V.tone(V.hidColor, now)
-				if V.layered then
-					V.paint(entry.main, hidC, V.style, V.alpha, pulse)
-					V.paint(entry.over, visC, V.style, V.alpha, pulse)
-				else
-					V.paint(entry.main, visC, V.style, V.alpha, pulse)
-				end
-			end
-		end
-		for p, entry in pairs(V.cham) do
-			if not want[p] then
-				V.killEntry(entry)
-				V.cham[p] = nil
-			end
-		end
-	end
+    function V.enemyStep(now)
+        local want = {}
+        if V.chamsOn then
+            local origin = V.origin()
+            local budget = V.budget - (V.selfOn and 1 or 0) - (V.itemOn and V.itemCount or 0)
+            local per = V.layered and 2 or 1
+            local cands = {}
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= player then
+                    local isB = V.isBear(p)
+                    local teamOk = V.target == "Everyone" or (V.target == "Bears" and isB) or (V.target == "Survivors" and not isB)
+                    local char = p.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    local hum = char and char:FindFirstChildOfClass("Humanoid")
+                    if teamOk and hrp and hum and hum.Health > 0 then
+                        local d = origin and (hrp.Position - origin).Magnitude or 0
+                        if d <= V.maxDist then
+                            cands[#cands + 1] = { p = p, char = char, d = d, bear = isB }
+                        end
+                    end
+                end
+            end
+            table.sort(cands, function(a, b) return a.d < b.d end)
+            local pulse = V.pulseFactor(now)
+            local used = 0
+            for _, c in ipairs(cands) do
+                if used + per > budget then break end
+                used += per
+                want[c.p] = true
+                local entry = V.cham[c.p]
+                if not entry or not entry.main or not entry.main.Parent then
+                    V.killEntry(entry)
+                    entry = { main = V.newHighlight(Enum.HighlightDepthMode.AlwaysOnTop) }
+                    V.cham[c.p] = entry
+                end
+                if V.layered and (not entry.over or not entry.over.Parent) then
+                    entry.over = V.newHighlight(Enum.HighlightDepthMode.Occluded)
+                elseif not V.layered and entry.over then
+                    pcall(function() entry.over:Destroy() end)
+                    entry.over = nil
+                end
+                if entry.main.Adornee ~= c.char then entry.main.Adornee = c.char end
+                if entry.over and entry.over.Adornee ~= c.char then entry.over.Adornee = c.char end
+                local baseCol = V.visColor
+                if V.teamColors then baseCol = c.bear and V.bearColor or V.survColor end
+                local visC = V.tone(baseCol, now)
+                local hidC = V.tone(V.hidColor, now)
+                if V.layered then
+                    V.paint(entry.main, hidC, V.style, V.alpha, pulse)
+                    V.paint(entry.over, visC, V.style, V.alpha, pulse)
+                else
+                    V.paint(entry.main, visC, V.style, V.alpha, pulse)
+                end
+            end
+        end
+        for p, entry in pairs(V.cham) do
+            if not want[p] then
+                V.killEntry(entry)
+                V.cham[p] = nil
+            end
+        end
+    end
 
-	function V.itemStep(now)
-		local want = {}
-		if V.itemOn then
-			local origin = V.origin()
-			local cands = {}
-			for part, d in pairs(itemPool) do
-				if part and part.Parent and origin then
-					local dist = (part.Position - origin).Magnitude
-					if dist <= V.itemDist then
-						cands[#cands + 1] = { part = part, d = dist, color = d._color }
-					end
-				end
-			end
-			table.sort(cands, function(a, b) return a.d < b.d end)
-			local pulse = V.pulseFactor(now)
-			for i = 1, math.min(#cands, V.itemCount) do
-				local c = cands[i]
-				want[c.part] = true
-				local entry = V.itemCham[c.part]
-				if not entry or not entry.main or not entry.main.Parent then
-					V.killEntry(entry)
-					entry = { main = V.newHighlight(Enum.HighlightDepthMode.AlwaysOnTop) }
-					V.itemCham[c.part] = entry
-				end
-				if entry.main.Adornee ~= c.part then entry.main.Adornee = c.part end
-				V.paint(entry.main, V.tone(c.color or Color3.new(1, 1, 1), now), V.style, V.alpha, pulse)
-			end
-		end
-		for part, entry in pairs(V.itemCham) do
-			if not want[part] then
-				V.killEntry(entry)
-				V.itemCham[part] = nil
-			end
-		end
-	end
+    function V.itemStep(now)
+        local want = {}
+        if V.itemOn then
+            local origin = V.origin()
+            local cands = {}
+            for part, d in pairs(itemPool) do
+                if part and part.Parent and origin then
+                    local dist = (part.Position - origin).Magnitude
+                    if dist <= V.itemDist then
+                        cands[#cands + 1] = { part = part, d = dist, color = d._color }
+                    end
+                end
+            end
+            table.sort(cands, function(a, b) return a.d < b.d end)
+            local pulse = V.pulseFactor(now)
+            for i = 1, math.min(#cands, V.itemCount) do
+                local c = cands[i]
+                want[c.part] = true
+                local entry = V.itemCham[c.part]
+                if not entry or not entry.main or not entry.main.Parent then
+                    V.killEntry(entry)
+                    entry = { main = V.newHighlight(Enum.HighlightDepthMode.AlwaysOnTop) }
+                    V.itemCham[c.part] = entry
+                end
+                if entry.main.Adornee ~= c.part then entry.main.Adornee = c.part end
+                V.paint(entry.main, V.tone(c.color or Color3.new(1, 1, 1), now), V.style, V.alpha, pulse)
+            end
+        end
+        for part, entry in pairs(V.itemCham) do
+            if not want[part] then
+                V.killEntry(entry)
+                V.itemCham[part] = nil
+            end
+        end
+    end
 
-	function V.selfRestore()
-		for part, saved in pairs(V.selfSaved) do
-			if part.Parent then
-				pcall(function()
-					part.Color = saved.Color
-					part.Material = saved.Material
-				end)
-			end
-			V.selfSaved[part] = nil
-		end
-	end
+    function V.selfRestore()
+        for part, saved in pairs(V.selfSaved) do
+            if part.Parent then
+                pcall(function()
+                    part.Color = saved.Color
+                    part.Material = saved.Material
+                end)
+            end
+            V.selfSaved[part] = nil
+        end
+    end
 
-	function V.selfClear()
-		if V.selfCham then
-			pcall(function() V.selfCham:Destroy() end)
-			V.selfCham = nil
-		end
-		if next(V.selfSaved) then V.selfRestore() end
-	end
+    function V.selfClear()
+        if V.selfCham then
+            pcall(function() V.selfCham:Destroy() end)
+            V.selfCham = nil
+        end
+        if next(V.selfSaved) then V.selfRestore() end
+    end
 
-	function V.selfStep(now)
-		local char = player.Character
-		if not (V.selfOn and char) then
-			V.selfClear()
-			return
-		end
-		local color = V.tone(V.selfColor, now)
-		if not V.selfCham or not V.selfCham.Parent then
-			V.selfCham = V.newHighlight(Enum.HighlightDepthMode.Occluded)
-		end
-		if V.selfCham.Adornee ~= char then V.selfCham.Adornee = char end
-		V.paint(V.selfCham, color, V.style, V.alpha, V.pulseFactor(now))
-		local mat = V.selfMaterials[V.selfMaterial]
-		if mat then
-			for _, d in ipairs(char:GetDescendants()) do
-				if d:IsA("BasePart") and not d:FindFirstAncestorOfClass("Tool") then
-					local saved = V.selfSaved[d]
-					if not saved then
-						saved = { Color = d.Color, Material = d.Material }
-						V.selfSaved[d] = saved
-					end
-					d.Color = color
-					d.Material = mat
-				end
-			end
-		elseif next(V.selfSaved) then
-			V.selfRestore()
-		end
-	end
+    function V.selfStep(now)
+        local char = player.Character
+        if not (V.selfOn and char) then
+            V.selfClear()
+            return
+        end
+        local color = V.tone(V.selfColor, now)
+        if not V.selfCham or not V.selfCham.Parent then
+            V.selfCham = V.newHighlight(Enum.HighlightDepthMode.Occluded)
+        end
+        if V.selfCham.Adornee ~= char then V.selfCham.Adornee = char end
+        V.paint(V.selfCham, color, V.style, V.alpha, V.pulseFactor(now))
+        local mat = V.selfMaterials[V.selfMaterial]
+        if mat then
+            for _, d in ipairs(char:GetDescendants()) do
+                if d:IsA("BasePart") and not d:FindFirstAncestorOfClass("Tool") then
+                    local saved = V.selfSaved[d]
+                    if not saved then
+                        saved = { Color = d.Color, Material = d.Material }
+                        V.selfSaved[d] = saved
+                    end
+                    d.Color = color
+                    d.Material = mat
+                end
+            end
+        elseif next(V.selfSaved) then
+            V.selfRestore()
+        end
+    end
 
-	function V.vignetteStep()
-		if not (V.vig and V.warn) then return end
-		local on = false
-		local myTeam = player.Team and player.Team.Name
-		local cam = workspace.CurrentCamera
-		local myHrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-		if V.vigOn and myHrp and cam and myTeam ~= "Bear" then
-			local best = math.huge
-			for _, p in ipairs(Players:GetPlayers()) do
-				if p ~= player and V.isBear(p) then
-					local char = p.Character
-					local hrp = char and char:FindFirstChild("HumanoidRootPart")
-					local hum = char and char:FindFirstChildOfClass("Humanoid")
-					if hrp and hum and hum.Health > 0 then
-						local d = (hrp.Position - myHrp.Position).Magnitude
-						if d < best then best = d end
-					end
-				end
-			end
-			if best <= V.vigRadius then
-				on = true
-				local vp = cam.ViewportSize
-				local strength = math.clamp(1 - best / V.vigRadius, 0, 1)
-				V.vig.Position = Vector2.new(0, 0)
-				V.vig.Size = vp
-				V.vig.Transparency = math.clamp(strength * 0.7, 0.05, 0.7)
-				V.warn.Position = Vector2.new(vp.X / 2, 70)
-				V.warn.Text = string.format("bear: %d studs", math.floor(best + 0.5))
-			end
-		end
-		V.vig.Visible = on
-		V.warn.Visible = on
-	end
+    function V.vignetteStep()
+        if not (V.vig and V.warn) then return end
+        local on = false
+        local myTeam = player.Team and player.Team.Name
+        local cam = workspace.CurrentCamera
+        local myHrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if V.vigOn and myHrp and cam and myTeam ~= "Bear" then
+            local best = math.huge
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= player and V.isBear(p) then
+                    local char = p.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    local hum = char and char:FindFirstChildOfClass("Humanoid")
+                    if hrp and hum and hum.Health > 0 then
+                        local d = (hrp.Position - myHrp.Position).Magnitude
+                        if d < best then best = d end
+                    end
+                end
+            end
+            if best <= V.vigRadius then
+                on = true
+                local vp = cam.ViewportSize
+                local strength = math.clamp(1 - best / V.vigRadius, 0, 1)
+                V.vig.Position = Vector2.new(0, 0)
+                V.vig.Size = vp
+                V.vig.Transparency = math.clamp(strength * 0.7, 0.05, 0.7)
+                V.warn.Position = Vector2.new(vp.X / 2, 70)
+                V.warn.Text = string.format("bear: %d studs", math.floor(best + 0.5))
+            end
+        end
+        V.vig.Visible = on
+        V.warn.Visible = on
+    end
 
-	function V.worldStep()
-		local night = V.nightOn and not fullbrightEnabled
-		if night then
-			if not V.night then
-				V.night = {
-					Brightness = lighting.Brightness,
-					ClockTime = lighting.ClockTime,
-					Ambient = lighting.Ambient,
-					OutdoorAmbient = lighting.OutdoorAmbient,
-					ExposureCompensation = lighting.ExposureCompensation,
-				}
-			end
-			lighting.Brightness = 0.4
-			lighting.ClockTime = 0
-			lighting.Ambient = Color3.fromRGB(25, 30, 60)
-			lighting.OutdoorAmbient = Color3.fromRGB(25, 30, 60)
-			lighting.ExposureCompensation = -0.2
-		elseif V.night then
-			for k, v in pairs(V.night) do lighting[k] = v end
-			V.night = nil
-		end
+    function V.worldStep()
+        local night = V.nightOn and not fullbrightEnabled
+        if night then
+            if not V.night then
+                V.night = {
+                    Brightness = lighting.Brightness,
+                    ClockTime = lighting.ClockTime,
+                    Ambient = lighting.Ambient,
+                    OutdoorAmbient = lighting.OutdoorAmbient,
+                    ExposureCompensation = lighting.ExposureCompensation,
+                }
+            end
+            lighting.Brightness = 0.4
+            lighting.ClockTime = 0
+            lighting.Ambient = Color3.fromRGB(25, 30, 60)
+            lighting.OutdoorAmbient = Color3.fromRGB(25, 30, 60)
+            lighting.ExposureCompensation = -0.2
+        elseif V.night then
+            for k, v in pairs(V.night) do lighting[k] = v end
+            V.night = nil
+        end
 
-		if V.ccOn then
-			local cc = V.cc
-			if not cc or not cc.Parent then
-				cc = Instance.new("ColorCorrectionEffect")
-				cc.Name = HttpService:GenerateGUID(false)
-				cc.Parent = lighting
-				V.cc = cc
-			end
-			cc.Saturation, cc.Contrast, cc.Brightness = V.sat, V.con, V.bri
-			cc.TintColor = V.tint
-		elseif V.cc then
-			pcall(function() V.cc:Destroy() end)
-			V.cc = nil
-		end
+        if V.ccOn then
+            local cc = V.cc
+            if not cc or not cc.Parent then
+                cc = Instance.new("ColorCorrectionEffect")
+                cc.Name = HttpService:GenerateGUID(false)
+                cc.Parent = lighting
+                V.cc = cc
+            end
+            cc.Saturation, cc.Contrast, cc.Brightness = V.sat, V.con, V.bri
+            cc.TintColor = V.tint
+        elseif V.cc then
+            pcall(function() V.cc:Destroy() end)
+            V.cc = nil
+        end
 
-		if V.bloomOn then
-			local b = V.bloom
-			if not b or not b.Parent then
-				b = Instance.new("BloomEffect")
-				b.Name = HttpService:GenerateGUID(false)
-				b.Intensity, b.Size, b.Threshold = 1.2, 28, 0.85
-				b.Parent = lighting
-				V.bloom = b
-			end
-		elseif V.bloom then
-			pcall(function() V.bloom:Destroy() end)
-			V.bloom = nil
-		end
-	end
+        if V.bloomOn then
+            local b = V.bloom
+            if not b or not b.Parent then
+                b = Instance.new("BloomEffect")
+                b.Name = HttpService:GenerateGUID(false)
+                b.Intensity, b.Size, b.Threshold = 1.2, 28, 0.85
+                b.Parent = lighting
+                V.bloom = b
+            end
+        elseif V.bloom then
+            pcall(function() V.bloom:Destroy() end)
+            V.bloom = nil
+        end
+    end
 
-	function V.setZoom(minD, maxD)
-		pcall(function() player.CameraMaxZoomDistance = maxD end)
-		pcall(function() player.CameraMinZoomDistance = minD end)
-		pcall(function() player.CameraMaxZoomDistance = maxD end)
-	end
+    function V.setZoom(minD, maxD)
+        pcall(function() player.CameraMaxZoomDistance = maxD end)
+        pcall(function() player.CameraMinZoomDistance = minD end)
+        pcall(function() player.CameraMaxZoomDistance = maxD end)
+    end
 
-	function V.thirdRestore()
-		if not V.third then return end
-		local t = V.third
-		V.third = nil
-		V.setZoom(t.min, t.max)
-		pcall(function() player.CameraMode = t.mode end)
-	end
+    function V.thirdRestore()
+        if not V.third then return end
+        local t = V.third
+        V.third = nil
+        V.setZoom(t.min, t.max)
+        pcall(function() player.CameraMode = t.mode end)
+    end
 
-	function V.thirdStep()
-		if V.thirdOn and not freecamEnabled then
-			if not V.third then
-				V.third = { min = player.CameraMinZoomDistance, max = player.CameraMaxZoomDistance, mode = player.CameraMode }
-			end
-			local d = V.thirdDist
-			if player.CameraMinZoomDistance ~= d or player.CameraMaxZoomDistance ~= d then V.setZoom(d, d) end
-			if player.CameraMode ~= Enum.CameraMode.Classic then
-				pcall(function() player.CameraMode = Enum.CameraMode.Classic end)
-			end
-		else
-			V.thirdRestore()
-		end
-	end
+    function V.thirdStep()
+        if V.thirdOn and not freecamEnabled then
+            if not V.third then
+                V.third = { min = player.CameraMinZoomDistance, max = player.CameraMaxZoomDistance, mode = player.CameraMode }
+            end
+            local d = V.thirdDist
+            if player.CameraMinZoomDistance ~= d or player.CameraMaxZoomDistance ~= d then V.setZoom(d, d) end
+            if player.CameraMode ~= Enum.CameraMode.Classic then
+                pcall(function() player.CameraMode = Enum.CameraMode.Classic end)
+            end
+        else
+            V.thirdRestore()
+        end
+    end
 
-	function V.onRender()
-		if V.dead then return end
-		local now = os.clock()
-		V.safe(V.enemyStep, now)
-		V.safe(V.itemStep, now)
-		V.safe(V.selfStep, now)
-		V.safe(V.vignetteStep)
-	end
+    function V.onRender()
+        if V.dead then return end
+        local now = os.clock()
+        V.safe(V.enemyStep, now)
+        V.safe(V.itemStep, now)
+        V.safe(V.selfStep, now)
+        V.safe(V.vignetteStep)
+    end
 
-	function V.onBeat()
-		if V.dead then return end
-		V.safe(V.worldStep)
-		V.safe(V.thirdStep)
-	end
+    function V.onBeat()
+        if V.dead then return end
+        V.safe(V.worldStep)
+        V.safe(V.thirdStep)
+    end
 
-	function V.cleanup()
-		if V.dead then return end
-		V.dead = true
-		for _, c in ipairs(V.conns) do pcall(function() c:Disconnect() end) end
-		V.conns = {}
-		for _, e in pairs(V.cham) do V.killEntry(e) end
-		for _, e in pairs(V.itemCham) do V.killEntry(e) end
-		V.cham, V.itemCham = {}, {}
-		V.selfClear()
-		V.thirdRestore()
-		if V.night then
-			for k, v in pairs(V.night) do lighting[k] = v end
-			V.night = nil
-		end
-		if V.cc then pcall(function() V.cc:Destroy() end) end
-		if V.bloom then pcall(function() V.bloom:Destroy() end) end
-		if V.vig then pcall(function() V.vig:Remove() end) end
-		if V.warn then pcall(function() V.warn:Remove() end) end
-	end
+    function V.cleanup()
+        if V.dead then return end
+        V.dead = true
+        for _, c in ipairs(V.conns) do pcall(function() c:Disconnect() end) end
+        V.conns = {}
+        for _, e in pairs(V.cham) do V.killEntry(e) end
+        for _, e in pairs(V.itemCham) do V.killEntry(e) end
+        V.cham, V.itemCham = {}, {}
+        V.selfClear()
+        V.thirdRestore()
+        if V.night then
+            for k, v in pairs(V.night) do lighting[k] = v end
+            V.night = nil
+        end
+        if V.cc then pcall(function() V.cc:Destroy() end) end
+        if V.bloom then pcall(function() V.bloom:Destroy() end) end
+        if V.vig then pcall(function() V.vig:Remove() end) end
+        if V.warn then pcall(function() V.warn:Remove() end) end
+    end
 
-	pcall(function()
-		V.vig = newDrawing("Square", {
-			Filled = false, Thickness = 70, Color = Color3.fromRGB(255, 30, 30),
-			Transparency = 0.4, Visible = false, ZIndex = 9,
-		})
-		V.warn = newDrawing("Text", {
-			Size = 20, Center = true, Outline = true, Color = Color3.fromRGB(255, 70, 70),
-			Visible = false, ZIndex = 10,
-		})
-	end)
+    pcall(function()
+        V.vig = newDrawing("Square", {
+            Filled = false, Thickness = 70, Color = Color3.fromRGB(255, 30, 30),
+            Transparency = 0.4, Visible = false, ZIndex = 9,
+        })
+        V.warn = newDrawing("Text", {
+            Size = 20, Center = true, Outline = true, Color = Color3.fromRGB(255, 70, 70),
+            Visible = false, ZIndex = 10,
+        })
+    end)
 
-	V.tabChams = tabChams
-	V.tabWorld = tabWorld
-	V.grpEnemy = V.tabChams:AddLeftGroupbox("Enemy Chams")
-	V.grpItems = V.tabChams:AddLeftGroupbox("Item Chams")
-	V.grpLocal = V.tabChams:AddRightGroupbox("Local Chams")
-	V.grpWorld = V.tabWorld:AddLeftGroupbox("World")
-	V.grpCamera = V.tabWorld:AddRightGroupbox("Camera & Warning")
+    V.tabChams = tabChams
+    V.tabWorld = tabWorld
+    V.grpEnemy = V.tabChams:AddLeftGroupbox("Enemy Chams")
+    V.grpItems = V.tabChams:AddLeftGroupbox("Item Chams")
+    V.grpLocal = V.tabChams:AddRightGroupbox("Local Chams")
+    V.grpWorld = V.tabWorld:AddLeftGroupbox("World")
+    V.grpCamera = V.tabWorld:AddRightGroupbox("Camera & Warning")
 
-	V.grpEnemy:AddToggle("BAV_ChamsOn", { Text = "Player Chams", Default = false, Callback = function(v) V.chamsOn = v end })
-	V.grpEnemy:AddToggle("BAV_Layered", { Text = "Two Layers (visible / hidden)", Default = false, Callback = function(v) V.layered = v end })
-	V.grpEnemy:AddDropdown("BAV_Target", {
-		Text = "Show On", Values = { "Everyone", "Bears", "Survivors" }, Default = 1,
-		Callback = function(v) V.target = v end,
-	})
-	V.grpEnemy:AddDropdown("BAV_Style", {
-		Text = "Style", Values = { "Fill", "Glow", "Outline" }, Default = 1,
-		Callback = function(v) V.style = v end,
-	})
-	V.grpEnemy:AddLabel("Visible color"):AddColorPicker("BAV_VisColor", {
-		Title = "Visible color", Default = V.visColor,
-		Callback = function(c) V.visColor = c end,
-	})
-	V.grpEnemy:AddLabel("Hidden layer color"):AddColorPicker("BAV_HidColor", {
-		Title = "Hidden layer color", Default = V.hidColor,
-		Callback = function(c) V.hidColor = c end,
-	})
-	V.grpEnemy:AddToggle("BAV_TeamColors", { Text = "Use Team Colors", Default = false, Callback = function(v) V.teamColors = v end })
-	V.grpEnemy:AddLabel("Bear color"):AddColorPicker("BAV_BearColor", {
-		Title = "Bear color", Default = V.bearColor,
-		Callback = function(c) V.bearColor = c end,
-	})
-	V.grpEnemy:AddLabel("Survivor color"):AddColorPicker("BAV_SurvColor", {
-		Title = "Survivor color", Default = V.survColor,
-		Callback = function(c) V.survColor = c end,
-	})
-	V.grpEnemy:AddSlider("BAV_Alpha", {
-		Text = "Fill Opacity", Min = 0.05, Max = 1, Default = 0.5, Increment = 0.05, Rounding = 2,
-		Callback = function(v) V.alpha = v end,
-	})
-	V.grpEnemy:AddToggle("BAV_Pulse", { Text = "Pulse", Default = false, Callback = function(v) V.pulse = v end })
-	V.grpEnemy:AddToggle("BAV_Rainbow", { Text = "Rainbow Chams", Default = false, Callback = function(v) V.rainbow = v end })
-	V.grpEnemy:AddSlider("BAV_MaxDist", {
-		Text = "Max Distance", Min = 100, Max = 10000, Default = 2500, Increment = 100,
-		Callback = function(v) V.maxDist = v end,
-	})
-	V.grpEnemy:AddSlider("BAV_Budget", {
-		Text = "Highlight Budget", Min = 4, Max = 31, Default = 30, Increment = 1,
-		Callback = function(v) V.budget = v end,
-	})
+    V.grpEnemy:AddToggle("BAV_ChamsOn", { Text = "Player Chams", Default = false, Callback = function(v) V.chamsOn = v end })
+    V.grpEnemy:AddToggle("BAV_Layered", { Text = "Two Layers (visible / hidden)", Default = false, Callback = function(v) V.layered = v end })
+    V.grpEnemy:AddDropdown("BAV_Target", {
+        Text = "Show On", Values = { "Everyone", "Bears", "Survivors" }, Default = 1,
+        Callback = function(v) V.target = v end,
+    })
+    V.grpEnemy:AddDropdown("BAV_Style", {
+        Text = "Style", Values = { "Fill", "Glow", "Outline" }, Default = 1,
+        Callback = function(v) V.style = v end,
+    })
+    V.grpEnemy:AddLabel("Visible color"):AddColorPicker("BAV_VisColor", {
+        Title = "Visible color", Default = V.visColor,
+        Callback = function(c) V.visColor = c end,
+    })
+    V.grpEnemy:AddLabel("Hidden layer color"):AddColorPicker("BAV_HidColor", {
+        Title = "Hidden layer color", Default = V.hidColor,
+        Callback = function(c) V.hidColor = c end,
+    })
+    V.grpEnemy:AddToggle("BAV_TeamColors", { Text = "Use Team Colors", Default = false, Callback = function(v) V.teamColors = v end })
+    V.grpEnemy:AddLabel("Bear color"):AddColorPicker("BAV_BearColor", {
+        Title = "Bear color", Default = V.bearColor,
+        Callback = function(c) V.bearColor = c end,
+    })
+    V.grpEnemy:AddLabel("Survivor color"):AddColorPicker("BAV_SurvColor", {
+        Title = "Survivor color", Default = V.survColor,
+        Callback = function(c) V.survColor = c end,
+    })
+    V.grpEnemy:AddSlider("BAV_Alpha", {
+        Text = "Fill Opacity", Min = 0.05, Max = 1, Default = 0.5, Increment = 0.05, Rounding = 2,
+        Callback = function(v) V.alpha = v end,
+    })
+    V.grpEnemy:AddToggle("BAV_Pulse", { Text = "Pulse", Default = false, Callback = function(v) V.pulse = v end })
+    V.grpEnemy:AddToggle("BAV_Rainbow", { Text = "Rainbow Chams", Default = false, Callback = function(v) V.rainbow = v end })
+    V.grpEnemy:AddSlider("BAV_MaxDist", {
+        Text = "Max Distance", Min = 100, Max = 10000, Default = 2500, Increment = 100,
+        Callback = function(v) V.maxDist = v end,
+    })
+    V.grpEnemy:AddSlider("BAV_Budget", {
+        Text = "Highlight Budget", Min = 4, Max = 31, Default = 30, Increment = 1,
+        Callback = function(v) V.budget = v end,
+    })
 
-	V.grpItems:AddToggle("BAV_ItemOn", { Text = "Item Chams (nearest)", Default = false, Callback = function(v) V.itemOn = v end })
-	V.grpItems:AddSlider("BAV_ItemCount", {
-		Text = "Item Count", Min = 1, Max = 15, Default = 8, Increment = 1,
-		Callback = function(v) V.itemCount = v end,
-	})
-	V.grpItems:AddSlider("BAV_ItemDist", {
-		Text = "Item Distance", Min = 20, Max = 1000, Default = 300, Increment = 10,
-		Callback = function(v) V.itemDist = v end,
-	})
+    V.grpItems:AddToggle("BAV_ItemOn", { Text = "Item Chams (nearest)", Default = false, Callback = function(v) V.itemOn = v end })
+    V.grpItems:AddSlider("BAV_ItemCount", {
+        Text = "Item Count", Min = 1, Max = 15, Default = 8, Increment = 1,
+        Callback = function(v) V.itemCount = v end,
+    })
+    V.grpItems:AddSlider("BAV_ItemDist", {
+        Text = "Item Distance", Min = 20, Max = 1000, Default = 300, Increment = 10,
+        Callback = function(v) V.itemDist = v end,
+    })
 
-	V.grpLocal:AddToggle("BAV_SelfOn", { Text = "Local Player Chams", Default = false, Callback = function(v) V.selfOn = v end })
-	V.grpLocal:AddLabel("Local color"):AddColorPicker("BAV_SelfColor", {
-		Title = "Local color", Default = V.selfColor,
-		Callback = function(c) V.selfColor = c end,
-	})
-	V.grpLocal:AddDropdown("BAV_SelfMat", {
-		Text = "Body Material", Values = { "Keep", "ForceField", "Neon", "Glass" }, Default = 1,
-		Callback = function(v) V.selfMaterial = v end,
-	})
+    V.grpLocal:AddToggle("BAV_SelfOn", { Text = "Local Player Chams", Default = false, Callback = function(v) V.selfOn = v end })
+    V.grpLocal:AddLabel("Local color"):AddColorPicker("BAV_SelfColor", {
+        Title = "Local color", Default = V.selfColor,
+        Callback = function(c) V.selfColor = c end,
+    })
+    V.grpLocal:AddDropdown("BAV_SelfMat", {
+        Text = "Body Material", Values = { "Keep", "ForceField", "Neon", "Glass" }, Default = 1,
+        Callback = function(v) V.selfMaterial = v end,
+    })
 
-	V.grpWorld:AddToggle("BAV_Night", { Text = "Night Mode", Default = false, Callback = function(v) V.nightOn = v end })
-	V.grpWorld:AddToggle("BAV_CC", { Text = "Color Grading", Default = false, Callback = function(v) V.ccOn = v end })
-	V.grpWorld:AddSlider("BAV_Sat", {
-		Text = "Saturation", Min = -1, Max = 2, Default = 0.3, Increment = 0.1, Rounding = 1,
-		Callback = function(v) V.sat = v end,
-	})
-	V.grpWorld:AddSlider("BAV_Con", {
-		Text = "Contrast", Min = -0.5, Max = 1, Default = 0.1, Increment = 0.05, Rounding = 2,
-		Callback = function(v) V.con = v end,
-	})
-	V.grpWorld:AddSlider("BAV_Bri", {
-		Text = "Brightness", Min = -0.5, Max = 0.5, Default = 0, Increment = 0.05, Rounding = 2,
-		Callback = function(v) V.bri = v end,
-	})
-	V.grpWorld:AddLabel("Tint"):AddColorPicker("BAV_Tint", {
-		Title = "Tint", Default = V.tint,
-		Callback = function(c) V.tint = c end,
-	})
-	V.grpWorld:AddToggle("BAV_Bloom", { Text = "Bloom", Default = false, Callback = function(v) V.bloomOn = v end })
+    V.grpWorld:AddToggle("BAV_Night", { Text = "Night Mode", Default = false, Callback = function(v) V.nightOn = v end })
+    V.grpWorld:AddToggle("BAV_CC", { Text = "Color Grading", Default = false, Callback = function(v) V.ccOn = v end })
+    V.grpWorld:AddSlider("BAV_Sat", {
+        Text = "Saturation", Min = -1, Max = 2, Default = 0.3, Increment = 0.1, Rounding = 1,
+        Callback = function(v) V.sat = v end,
+    })
+    V.grpWorld:AddSlider("BAV_Con", {
+        Text = "Contrast", Min = -0.5, Max = 1, Default = 0.1, Increment = 0.05, Rounding = 2,
+        Callback = function(v) V.con = v end,
+    })
+    V.grpWorld:AddSlider("BAV_Bri", {
+        Text = "Brightness", Min = -0.5, Max = 0.5, Default = 0, Increment = 0.05, Rounding = 2,
+        Callback = function(v) V.bri = v end,
+    })
+    V.grpWorld:AddLabel("Tint"):AddColorPicker("BAV_Tint", {
+        Title = "Tint", Default = V.tint,
+        Callback = function(c) V.tint = c end,
+    })
+    V.grpWorld:AddToggle("BAV_Bloom", { Text = "Bloom", Default = false, Callback = function(v) V.bloomOn = v end })
 
-	V.grpCamera:AddToggle("BAV_Third", { Text = "Third Person", Default = false, Callback = function(v) V.thirdOn = v end })
-	V.grpCamera:AddSlider("BAV_ThirdDist", {
-		Text = "Third Person Distance", Min = 5, Max = 40, Default = 12, Increment = 1,
-		Callback = function(v) V.thirdDist = v end,
-	})
-	V.grpCamera:AddToggle("BAV_Vig", { Text = "Bear Proximity Warning", Default = false, Callback = function(v) V.vigOn = v end })
-	V.grpCamera:AddSlider("BAV_VigRadius", {
-		Text = "Warning Radius", Min = 10, Max = 200, Default = 60, Increment = 5,
-		Callback = function(v) V.vigRadius = v end,
-	})
+    V.grpCamera:AddToggle("BAV_Third", { Text = "Third Person", Default = false, Callback = function(v) V.thirdOn = v end })
+    V.grpCamera:AddSlider("BAV_ThirdDist", {
+        Text = "Third Person Distance", Min = 5, Max = 40, Default = 12, Increment = 1,
+        Callback = function(v) V.thirdDist = v end,
+    })
+    V.grpCamera:AddToggle("BAV_Vig", { Text = "Bear Proximity Warning", Default = false, Callback = function(v) V.vigOn = v end })
+    V.grpCamera:AddSlider("BAV_VigRadius", {
+        Text = "Warning Radius", Min = 10, Max = 200, Default = 60, Increment = 5,
+        Callback = function(v) V.vigRadius = v end,
+    })
 
-	V.conns[#V.conns + 1] = RunService.RenderStepped:Connect(V.onRender)
-	V.conns[#V.conns + 1] = RunService.Heartbeat:Connect(V.onBeat)
+    V.conns[#V.conns + 1] = RunService.RenderStepped:Connect(V.onRender)
+    V.conns[#V.conns + 1] = RunService.Heartbeat:Connect(V.onBeat)
 
-	if type(Library.OnUnload) == "function" then Library:OnUnload(V.cleanup) end
+    if type(Library.OnUnload) == "function" then Library:OnUnload(V.cleanup) end
 end
 
 for _, p in ipairs(Players:GetPlayers()) do
@@ -4194,6 +4301,7 @@ RunService.RenderStepped:Connect(function(dt)
         for _, k in ipairs({ "topLeft1","topLeft2","topRight1","topRight2","botLeft1","botLeft2","botRight1","botRight2" }) do
             objects[k].Visible = showBoxes
             objects[k].Color   = boxColor
+            objects[k].Thickness = A.thick
         end
 
         objects.topLeft1.From  = Vector2.new(left,  yTop); objects.topLeft1.To   = Vector2.new(left  + cw, yTop)
@@ -4206,6 +4314,7 @@ RunService.RenderStepped:Connect(function(dt)
         objects.botRight2.From = Vector2.new(right, yBot); objects.botRight2.To  = Vector2.new(right,      yBot - ch)
 
         objects.tracer.Color   = boxColor
+        objects.tracer.Thickness = A.thick
         objects.tracer.Visible = showTracers
         objects.tracer.From    = Vector2.new(math.floor(vp.X / 2), math.floor(vp.Y))
         objects.tracer.To      = Vector2.new(x, yBot)
@@ -4213,12 +4322,14 @@ RunService.RenderStepped:Connect(function(dt)
         objects.name.Visible   = showNames
         objects.name.Position  = Vector2.new(x, yTop - 16)
         objects.name.Text      = p.DisplayName
+        objects.name.Size      = A.text
 
         if showDistances and myHrp then
             local dist = math.floor((hrp.Position - myHrp.Position).Magnitude)
             objects.distance.Visible  = true
             objects.distance.Position = Vector2.new(x, yTop - 28)
             objects.distance.Text     = dist .. " studs"
+            objects.distance.Size     = math.max(A.text - 2, 8)
         else
             objects.distance.Visible = false
         end
@@ -4231,6 +4342,8 @@ RunService.RenderStepped:Connect(function(dt)
         local hx      = left - 4
         local hpColor = hPct > 0.6 and Color3.new(0, 1, 0)
                      or (hPct > 0.3 and Color3.new(1, 1, 0) or Color3.new(1, 0, 0))
+        objects.healthBg.Thickness  = A.thick + 0.5
+        objects.healthBar.Thickness = A.thick + 0.5
 
         objects.healthBg.Visible  = showHealthBar
         objects.healthBg.From     = Vector2.new(hx, yTop)
@@ -4243,6 +4356,7 @@ RunService.RenderStepped:Connect(function(dt)
 
     if showNearestBearLine and nearestBearData then
         nearestBearData.objects.bearLine.Visible = true
+        nearestBearData.objects.bearLine.Thickness = A.thick + 0.5
         nearestBearData.objects.bearLine.From    = Vector2.new(math.floor(vp.X / 2), math.floor(vp.Y / 2))
         nearestBearData.objects.bearLine.To      = Vector2.new(nearestBearData.x, nearestBearData.yBot)
     end
@@ -4258,6 +4372,7 @@ RunService.RenderStepped:Connect(function(dt)
         d.label.Visible  = itemShowNames
         d.label.Position = Vector2.new(px, py - 8)
         d.label.Text     = d._displayName
+        d.label.Size     = math.max(A.text - 1, 8)
         d.tracer.Visible = itemShowTracers
         d.tracer.From    = Vector2.new(math.floor(vp.X / 2), math.floor(vp.Y))
         d.tracer.To      = Vector2.new(px, py)
@@ -4781,59 +4896,6 @@ task.spawn(function()
         return map and map:FindFirstChild(name) ~= nil and not masteryFarmed[name]
     end
 
-    local function nearestBearInfo(origin)
-        local bestPos, bestDist = nil, math.huge
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= player and p.Team and p.Team.Name == "Bear" then
-                local char = p.Character
-                local bhrp = char and char:FindFirstChild("HumanoidRootPart")
-                local bhum = char and char:FindFirstChildOfClass("Humanoid")
-                if bhrp and bhum and bhum.Health > 0 then
-                    local d = (bhrp.Position - origin).Magnitude
-                    if d < bestDist then bestPos, bestDist = bhrp.Position, d end
-                end
-            end
-        end
-        return bestPos, bestDist
-    end
-
-    local function findAwaySpot(myPos, bearPos)
-        local away = Vector3.new(myPos.X - bearPos.X, 0, myPos.Z - bearPos.Z)
-        if away.Magnitude < 0.1 then away = Vector3.new(1, 0, 0) end
-        away = away.Unit
-        local ignore = {}
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Character then table.insert(ignore, p.Character) end
-        end
-        local params = RaycastParams.new()
-        params.FilterType = Enum.RaycastFilterType.Exclude
-        params.FilterDescendantsInstances = ignore
-        local best, bestDist = nil, -1
-        for _, angle in ipairs({ 0, 30, -30, 60, -60, 90, -90, 135, -135, 180 }) do
-            local dir   = CFrame.Angles(0, math.rad(angle), 0):VectorToWorldSpace(away)
-            local probe = myPos + dir * 25
-            local hit   = workspace:Raycast(probe + Vector3.new(0, 60, 0), Vector3.new(0, -200, 0), params)
-            if hit then
-                local spot = hit.Position + Vector3.new(0, 3, 0)
-                local d    = (spot - bearPos).Magnitude
-                if d > bestDist then best, bestDist = spot, d end
-            end
-        end
-        return best
-    end
-
-    local function ensureSafe()
-        for _ = 1, 5 do
-            if not (fleeFromBear and masteryFarming) then return end
-            local fhrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if not fhrp then return end
-            local bearPos, dist = nearestBearInfo(fhrp.Position)
-            if not bearPos or dist > bearDangerRadius then return end
-            local spot = findAwaySpot(fhrp.Position, bearPos)
-            if spot then fhrp.CFrame = CFrame.new(spot) end
-            task.wait(bearFleeWait)
-        end
-    end
     local function waitForResult(flag, limit)
         local t = tick()
         while flag() and tick() - t < (limit or 30) do task.wait(0.2) end
@@ -4869,7 +4931,6 @@ task.spawn(function()
         stopDance()
 
         if hasCC then
-            ensureSafe()
             solvingCC = true
             waitForResult(function() return solvingCC end)
             masteryFarmed["ColorCode"] = true
@@ -4878,7 +4939,6 @@ task.spawn(function()
         end
 
         if hasWire then
-            ensureSafe()
             solvingWire = true
             waitForResult(function() return solvingWire end)
             masteryFarmed["Wire"] = true
@@ -4886,7 +4946,6 @@ task.spawn(function()
             if not masteryFarming then continue end
         end
         if hasSquash then
-            ensureSafe()
             local before = squashPasses
             squashingThings = true
             local t = tick()
@@ -4898,7 +4957,6 @@ task.spawn(function()
         end
 
         if hasSmoke then
-            ensureSafe()
             smokingThings = true
             waitForResult(function() return smokingThings end, 60)
             smokingThings = false
@@ -4907,7 +4965,6 @@ task.spawn(function()
             if not masteryFarming then continue end
         end
         if hasAltar then
-            ensureSafe()
             local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if hrp then
                 pcall(function()
@@ -4935,7 +4992,6 @@ task.spawn(function()
         end
 
         if hasMem then
-            ensureSafe()
             local memDone = false
             task.spawn(function()
                 local ok, memGui = pcall(function()
