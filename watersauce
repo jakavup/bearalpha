@@ -68,7 +68,7 @@ do
 		end },
 		{ "fps", function()
 			local n, t0 = 0, os.clock()
-			while os.clock() - t0 < 0.25 do RunService.RenderStepped:Wait(); n = n + (1) end
+			while os.clock() - t0 < 0.25 do RunService.RenderStepped:Wait(); n += 1 end
 			return string.format("%d", math.floor(n / (os.clock() - t0) + 0.5))
 		end },
 	}
@@ -265,7 +265,7 @@ do
 		local s0 = os.clock()
 		local k = 0
 		while result == nil or os.clock() - s0 < spinFor do
-			k = k + (1)
+			k += 1
 			logLabels[i].Text = label .. " " .. SPIN[(k % #SPIN) + 1]
 			local pct = ((i - 1) + math.min((os.clock() - s0) / spinFor, 0.9)) / total
 			progress.Text = string.format("%s %3d%%", bar(pct, 28), math.floor(pct * 100))
@@ -310,7 +310,7 @@ do
 	if blur then blur:Destroy() end
 end
 
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/Library.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/jakavup/didactic-robot/refs/heads/main/VIBECODING%20yeAHH"))()
 
 local Players          = game:GetService("Players")
 local RunService       = game:GetService("RunService")
@@ -1326,6 +1326,39 @@ grpPlayer:AddButton({
         end
     end,
 })
+
+do
+    local CUTSCENE_NAME = "CutsceneDeluxe"
+    local skipConns = {}
+    local function killCutscene(gui)
+        if not gui or gui.Name ~= CUTSCENE_NAME then return end
+        pcall(function() gui:Destroy() end)
+        local cam = workspace.CurrentCamera
+        if cam and not freecamEnabled and cam.CameraType == Enum.CameraType.Scriptable then
+            cam.CameraType = Enum.CameraType.Custom
+        end
+    end
+    local function stopSkipping()
+        for _, c in ipairs(skipConns) do c:Disconnect() end
+        skipConns = {}
+    end
+    local function startSkipping()
+        stopSkipping()
+        local pg = player:FindFirstChildOfClass("PlayerGui") or player:WaitForChild("PlayerGui", 10)
+        if not pg then return end
+        killCutscene(pg:FindFirstChild(CUTSCENE_NAME))
+        table.insert(skipConns, pg.ChildAdded:Connect(function(c)
+            if c.Name == CUTSCENE_NAME then task.defer(killCutscene, c) end
+        end))
+    end
+    grpPlayer:AddToggle("SkipIntroCutscene", {
+        Text = "Skip Intro Cutscene", Default = false,
+        Callback = function(v)
+            if v then startSkipping() else stopSkipping() end
+        end,
+    })
+    if type(Library.OnUnload) == "function" then Library:OnUnload(stopSkipping) end
+end
 grpMovement:AddSlider("WalkSpeed", {
     Text = "Walk Speed", Min = 16, Max = 500, Default = 16,
     Callback = function(v)
@@ -1824,10 +1857,33 @@ grpMisc:AddButton({ Text = "Server Hop", Func = function()
 end })
 grpMisc:AddButton({ Text = "Rejoin",         Func = function() teleportService:Teleport(game.PlaceId, player) end })
 grpMisc:AddButton({ Text = "Infinite Yield", Func = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))() end })
-
+do
+    local genv = (getgenv and getgenv()) or _G
+    local HUB_URL = "https://raw.githubusercontent.com/jakavup/bearalpha/refs/heads/main/watersauce"
+    local usingAscii = genv.__BAHUB_UI == "ASCII"
+    grpMisc:AddToggle("AsciiUI", {
+        Text = "ASCII UI", Default = usingAscii,
+        Callback = function(v)
+            if v == usingAscii then return end
+            usingAscii = v
+            genv.__BAHUB_UI = v and "ASCII" or "Obsidian"
+            task.spawn(function()
+                for id, t in pairs(Library.Toggles or genv.Toggles or {}) do
+                    if id ~= "AsciiUI" then pcall(function() t:SetValue(false) end) end
+                end
+                for _, name in ipairs({ "FOVOverride", "FullbrightLoop", "Freecam" }) do
+                    pcall(function() RunService:UnbindFromRenderStep(name) end)
+                end
+                task.wait(0.2)
+                pcall(function() Library:Unload() end)
+                loadstring(game:HttpGet(HUB_URL))()
+            end)
+        end,
+    })
+end
 local subPlaces = {
     { name = "CORRIDOR OF TIME",                            id = 9667910127      },
-    { name = "NOW FOREVER",                                 id = 9667909999      },
+    { name = "NOW & FOREVER",                                 id = 9667909999      },
     { name = "MAY 19",                                      id = 9542010768      },
     { name = "JUNE 20",                                     id = 9667909680      },
     { name = "JULY 19",                                     id = 9542012362      },
@@ -1960,7 +2016,7 @@ do
         Text = "Extended Killaura", Default = false,
         Callback = function(v)
             X.killauraOn = v
-            X.killauraToken = X.killauraToken + (1)
+            X.killauraToken += 1
             if v then task.spawn(runKillaura, X.killauraToken) end
         end,
     })
@@ -2087,7 +2143,7 @@ do
                                     pcall(function() hrp.CFrame = obj.CFrame + Vector3.new(0, 2, 0) end)
                                     task.wait(0.1)
                                     local ok = tryFireCD(hrp, obj)
-                                    if ok then X.candyCollected = X.candyCollected + (1) end
+                                    if ok then X.candyCollected += 1 end
                                     task.wait(0.2)
                                 end
                             end
@@ -2553,7 +2609,7 @@ do
 			local entry = State.playlist[i]
 			if not entry then log("no track " .. tostring(i), true) return end
 			State.index = i
-			State.loadToken = State.loadToken + (1)
+			State.loadToken += 1
 			local token = State.loadToken
 			sound:Stop()
 			sound.TimePosition = 0
@@ -2619,7 +2675,7 @@ do
 		end
 		Commands.pause = function() sound:Pause() log("paused at " .. clock(sound.TimePosition)) end
 		Commands.resume = function() sound:Resume() log("resumed") end
-		Commands.stop = function() State.loadToken = State.loadToken + 1 sound:Stop() log("stopped") end
+		Commands.stop = function() State.loadToken += 1 sound:Stop() log("stopped") end
 		Commands.next = function() local n = nextIndex(1) if n then playIndex(n) end end
 		Commands.prev = function() local n = nextIndex(-1) if n then playIndex(n) end end
 		Commands.vol = function(arg)
@@ -2655,11 +2711,11 @@ do
 			if not n or not State.playlist[n] then log("usage: rm <n>", true) return end
 			local e = table.remove(State.playlist, n)
 			if n == State.index then
-				State.loadToken = State.loadToken + (1)
+				State.loadToken += 1
 				sound:Stop()
 				State.index = 0
 			elseif n < State.index then
-				State.index = State.index - (1)
+				State.index -= 1
 			end
 			log("removed " .. e.name)
 		end
@@ -2670,7 +2726,7 @@ do
 			log("added " .. #PRESET .. " preset tracks")
 		end
 		Commands.clear = function()
-			State.loadToken = State.loadToken + (1)
+			State.loadToken += 1
 			sound:Stop()
 			State.playlist, State.index = {}, 0
 			log("playlist cleared")
@@ -2756,8 +2812,8 @@ do
 			local playing = sound.IsPlaying
 			local loaded = sound.IsLoaded and sound.TimeLength > 0
 
-			spinT = spinT + (dt)
-			if spinT > 0.1 then spinT = 0 spinK = spinK + (1) end
+			spinT += dt
+			if spinT > 0.1 then spinT = 0 spinK += 1 end
 			local status = playing and ">>" or (entry and not loaded and SPIN[(spinK % 4) + 1] .. " " or "||")
 			nowLabel.Text = fit(status .. " " .. (entry and entry.name or "nothing queued"), 60)
 			infoLabel.Text = string.format("track %d/%d   vol %3d%%   loop %s   shuffle %s",
@@ -2774,14 +2830,14 @@ do
 				local wobble = 0.55 + 0.45 * (math.noise(c * 0.37, now * 2.3) + 0.5)
 				local target = math.clamp(level * shape * wobble, 0, 1)
 				local cur = State.bars[c]
-				if target > cur then cur = cur + ((target - cur) * math.min(dt * 25, 1))
-				else cur = cur - (math.min(cur, dt * 1.6)) end
+				if target > cur then cur += (target - cur) * math.min(dt * 25, 1)
+				else cur -= math.min(cur, dt * 1.6) end
 				State.bars[c] = cur
 				if cur >= State.caps[c] then
 					State.caps[c] = cur
 					State.capHold[c] = 0.4
 				else
-					State.capHold[c] = State.capHold[c] - (dt)
+					State.capHold[c] -= dt
 					if State.capHold[c] <= 0 then State.caps[c] = math.max(0, State.caps[c] - dt * 0.8) end
 				end
 			end
@@ -2820,7 +2876,7 @@ do
 		local function Unload()
 			if State.dead then return end
 			State.dead = true
-			State.loadToken = State.loadToken + (1)
+			State.loadToken += 1
 			for _, c in ipairs(Conns) do pcall(function() c:Disconnect() end) end
 			pcall(function() sound:Stop() sound:Destroy() end)
 			pcall(function() gui:Destroy() end)
@@ -3077,19 +3133,19 @@ do
             if amount then break end
         end
         if not amount then
-            r.quidzUnreadable = r.quidzUnreadable + (1)
+            r.quidzUnreadable += 1
             return
         end
         local now = tick()
         if amount == W.lastAmount and now - W.lastAt < W.popupDedupe then return end
         W.lastAmount = amount
         W.lastAt     = now
-        r.quidz = r.quidz + amount
-        r.quidzEvents = r.quidzEvents + (1)
+        r.quidz       += amount
+        r.quidzEvents += 1
     end
 
     function W.schedulePopupRead()
-        W.popupToken = W.popupToken + (1)
+        W.popupToken += 1
         local token = W.popupToken
         task.delay(W.popupDebounce, function()
             if token == W.popupToken and W.alive then W.readPopup() end
@@ -3219,16 +3275,16 @@ do
         local r = W.round
         if not W.enabled or not r then return end
         if p == player then
-            r.myDeaths = r.myDeaths + (1)
+            r.myDeaths += 1
             return
         end
         if W.teamName() ~= "Bear" then return end
         if not (p.Team and p.Team.Name == "Survivors") then return end
-        r.survivorDeaths = r.survivorDeaths + (1)
+        r.survivorDeaths += 1
         local hrp   = char:FindFirstChild("HumanoidRootPart")
         local mine  = W.myHrp()
         if hrp and mine and (hrp.Position - mine.Position).Magnitude <= W.killRadius then
-            r.kills = r.kills + (1)
+            r.kills += 1
         end
     end
 
@@ -3539,7 +3595,7 @@ do
 			local used = 0
 			for _, c in ipairs(cands) do
 				if used + per > budget then break end
-				used = used + (per)
+				used += per
 				want[c.p] = true
 				local entry = V.cham[c.p]
 				if not entry or not entry.main or not entry.main.Parent then
@@ -4677,7 +4733,7 @@ task.spawn(function()
                             firetouchinterest(hrp, part, 1)
                         end
                     end
-                    if finished then squashPasses = squashPasses + (1) end
+                    if finished then squashPasses += 1 end
                 end
             end
         end
