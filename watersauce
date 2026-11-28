@@ -409,6 +409,22 @@ local balloonRGBSpeed   = 0.4
 local removeAllBalloons
 local spawnBalloons
 
+local hubAlive = true
+local hubConns = {}
+local function hubConnect(signal, fn)
+    local c = signal:Connect(fn)
+    hubConns[#hubConns + 1] = c
+    return c
+end
+
+local headOrig = setmetatable({}, { __mode = "k" })
+local function restoreHeads()
+    for head, size in pairs(headOrig) do
+        if head.Parent then pcall(function() head.Size = size end) end
+    end
+    table.clear(headOrig)
+end
+
 local function newDrawing(dtype, props)
     local obj = Drawing.new(dtype)
     for k, v in pairs(props) do obj[k] = v end
@@ -422,6 +438,14 @@ local function getCD(part)
         if v:IsA("ClickDetector") then return v end
     end
     return nil
+end
+
+local PUZZLE_RANGE = 20
+local function nearPart(part, range)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp or not part then return false end
+    return (hrp.Position - part.Position).Magnitude <= (range or PUZZLE_RANGE)
 end
 
 local function teleportTo(part)
@@ -634,11 +658,11 @@ local function setupESPPlayer(p)
     if p == player then return end
     removeESPPlayer(p)
     espObjects[p] = createESPObjects()
-    p.CharacterAdded:Connect(function()
+    hubConnect(p.CharacterAdded, function()
         removeESPPlayer(p)
         espObjects[p] = createESPObjects()
     end)
-    p.CharacterRemoving:Connect(function()
+    hubConnect(p.CharacterRemoving, function()
         if espObjects[p] then hideESPObjects(espObjects[p]) end
     end)
 end
@@ -764,7 +788,7 @@ local function setupSpeedTracker(p)
         end
     end
     if p.Character then task.spawn(onChar, p.Character) end
-    p.CharacterAdded:Connect(onChar)
+    hubConnect(p.CharacterAdded, onChar)
 end
 
 local function removeSpeedTracker(p)
@@ -1185,50 +1209,81 @@ LV.bind(player.Character)
 if type(Library.OnUnload) == "function" then Library:OnUnload(LV.cleanup) end
 
 local function solveMemoryGame()
-    local pg = player:WaitForChild("PlayerGui", 10)
-    local okReq, req = pcall(function()
-        return workspace:WaitForChild("Map", 10):WaitForChild("Memory", 10):WaitForChild("Base", 10):WaitForChild("PuzzleRequest", 10)
-    end)
-    if not pg or not okReq or not req or not req:IsA("RemoteEvent") then return false end
-    local sent, result = false, nil
-    local conn = req.OnClientEvent:Connect(function(action, data)
-        if action == "Result" then result = data; return end
-        if action ~= "Code" or sent or type(data) ~= "table" or #data == 0 then return end
-        local answer = {}
-        for i = 1, #data do
-            if type(data[i]) ~= "number" then return end
-            answer[i] = data[i]
+    local pg = player:FindFirstChildOfClass("PlayerGui") or player:WaitForChild("PlayerGui", 10)
+    if not pg then return nil end
+    local answer, result, remote, gui
+    local conns = {}
+
+    local function listen(r)
+        if remote then return end
+        remote = r
+        conns[#conns + 1] = r.OnClientEvent:Connect(function(action, data)
+            if action == "Code" and type(data) == "table" then
+                local a = {}
+                for i = 1, #data do a[i] = data[i] end
+                answer = a
+            elseif action == "Result" then
+                result = data
+            end
+        end)
+    end
+
+    local function hook(g)
+        if g.Name ~= "MemoryQuestion" or gui then return end
+        gui = g
+        local ev = g:FindFirstChild("Event")
+        if ev and ev:IsA("ObjectValue") and ev.Value and ev.Value:IsA("RemoteEvent") then
+            listen(ev.Value)
+            return
         end
         task.spawn(function()
+            local e = g:WaitForChild("Event", 5)
+            if not (e and e:IsA("ObjectValue")) then return end
             local t = tick()
-            local ready = false
-            while tick() - t < 20 do
-                local gui   = pg:FindFirstChild("MemoryQuestion")
-                local frame = gui and gui:FindFirstChild("Frame")
-                local send  = frame and frame:FindFirstChild("Send")
-                if not gui then break end
-                if send and send.Visible then ready = true; break end
-                task.wait(0.05)
-            end
-            if not ready or sent then return end
-            task.wait(0.1)
-            sent = pcall(function() req:FireServer("Code", answer) end)
+            while not e.Value and tick() - t < 5 do task.wait() end
+            if e.Value and e.Value:IsA("RemoteEvent") then listen(e.Value) end
         end)
-    end)
+    end
+
+    conns[#conns + 1] = pg.ChildAdded:Connect(hook)
+    local existing = pg:FindFirstChild("MemoryQuestion")
+    if existing then hook(existing) end
+
     pcall(function()
         local mem = workspace:WaitForChild("Map", 10):WaitForChild("Memory", 10)
-        local d1  = mem:WaitForChild("Item", 10):WaitForChild("Detect", 10)
-        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp and (hrp.Position - d1.Position).Magnitude > 10 then teleportTo(d1); task.wait(0.5) end
-        local d2  = mem:WaitForChild("Base", 10):WaitForChild("Detect", 10)
-        hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp and (hrp.Position - d2.Position).Magnitude > 10 then teleportTo(d2) end
+        local d1 = mem:WaitForChild("Item", 10):WaitForChild("Detect", 10)
+        if not nearPart(d1, 10) then teleportTo(d1); task.wait(0.5) end
+        local d2 = mem:WaitForChild("Base", 10):WaitForChild("Detect", 10)
+        if not nearPart(d2, 10) then teleportTo(d2) end
     end)
+
     local t = tick()
-    while result == nil and tick() - t < 40 do task.wait(0.2) end
-    conn:Disconnect()
-    print("[MEM] sent=" .. tostring(sent) .. " result=" .. tostring(result))
-    return sent, result
+    while not answer and tick() - t < 20 do task.wait(0.1) end
+
+    if answer and remote and gui then
+        local frame = gui:FindFirstChild("Frame")
+        local send = frame and frame:FindFirstChild("Send")
+        t = tick()
+        while gui.Parent and not (send and send.Visible) and tick() - t < 10 do task.wait(0.05) end
+        if gui.Parent then
+            task.wait(0.1)
+            pcall(function() remote:FireServer("Code", answer) end)
+            if frame then
+                pcall(function()
+                    frame.Entry.Visible = false
+                    frame.Send.Visible = false
+                    frame.TopQuestion.Visible = false
+                    frame.Prompt.Text = "VERIFYING..."
+                    frame.Prompt.Visible = true
+                end)
+            end
+            t = tick()
+            while result == nil and gui.Parent and tick() - t < 10 do task.wait(0.1) end
+        end
+    end
+
+    for _, c in ipairs(conns) do c:Disconnect() end
+    return answer ~= nil, result
 end
 
 local Window = Library:CreateWindow({
@@ -1652,6 +1707,7 @@ grpESP:AddToggle("ESPHealth",    { Text = "Health Bar",                Default =
 grpESP:AddToggle("ESPNames",     { Text = "Names",                     Default = true,  Callback = function(v) showNames           = v end })
 grpESP:AddToggle("ESPDist",      { Text = "Distances",                 Default = false, Callback = function(v) showDistances       = v end })
 grpESP:AddToggle("ESPBearLine",  { Text = "Thick Head Tracer To Bear", Default = false, Callback = function(v) showNearestBearLine = v end })
+grpESP:AddToggle("ESPSpeedLabels", { Text = "Speed Labels",         Default = false, Callback = function(v) playerSpeedLabels   = v end })
 grpESP:AddDropdown("ESPSizeMode", {
     Text     = "Box Size Mode",
     Values   = { "Dynamic", "Static" },
@@ -1684,7 +1740,9 @@ grpPuzzles:AddButton({
             local baseDet  = altar:WaitForChild("Base",10):WaitForChild("Detect",10)
             hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
-            hrp.CFrame = CFrame.new(baseDet.Position)
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+            hrp.CFrame = CFrame.new(baseDet.Position + Vector3.new(0, 10, 0)) * hrp.CFrame.Rotation
             task.wait(0.1)
             firetouchinterest(hrp, baseDet, 0)
             task.wait(0.1)
@@ -1695,16 +1753,107 @@ grpPuzzles:AddButton({
 grpPuzzles:AddButton({
     Text = "Memory Disc Game",
     Func = function()
-        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        local d1  = workspace:WaitForChild("Map",10):WaitForChild("Memory",10):WaitForChild("Item",10):WaitForChild("Detect",10)
-        if hrp and (hrp.Position - d1.Position).Magnitude > 10 then teleportTo(d1); task.wait(0.5) end
-        local d2 = workspace:WaitForChild("Map",10):WaitForChild("Memory",10):WaitForChild("Base",10):WaitForChild("Detect",10)
-        if hrp and (hrp.Position - d2.Position).Magnitude > 10 then teleportTo(d2) end
+        task.spawn(function()
+            local got = solveMemoryGame()
+            Library:Notify(got and "Memory code sent." or "Memory code not received.", 3)
+        end)
     end,
 })
 
 grpLoneHouse:AddToggle("SquashThings", { Text = "Squash lil things", Default = false, Callback = function(v) squashingThings = v end })
 grpLoneHouse:AddToggle("SmokeThings",  { Text = "Smoke things",      Default = false, Callback = function(v) smokingThings   = v end })
+
+local solvingPaintings = false
+local grpSunsetPlain = tabPuzzles:AddLeftGroupbox("Sunset Plain Puzzles")
+local paintingsToggle = grpSunsetPlain:AddToggle("SolvePaintings", {
+    Text = "Paintings", Default = false,
+    Callback = function(v) solvingPaintings = v end,
+})
+do
+    local function finish(msg)
+        solvingPaintings = false
+        pcall(function() paintingsToggle:SetValue(false) end)
+        Library:Notify(msg, 3)
+    end
+
+    local function findModelsFolder()
+        local map = workspace:FindFirstChild("Map")
+        local folder = map and map:FindFirstChild("Painting")
+        return folder and folder:FindFirstChild("Models")
+    end
+
+    local function isSolved(model)
+        local part = model:FindFirstChild("Painting")
+        local emitter = part and part:FindFirstChildOfClass("ParticleEmitter")
+        return emitter ~= nil and emitter.Enabled
+    end
+
+    local function getCDs(model)
+        local list = {}
+        for _, d in ipairs(model:GetDescendants()) do
+            if d:IsA("ClickDetector") then
+                d.MaxActivationDistance = 1e11
+                list[#list + 1] = d
+            end
+        end
+        return list
+    end
+
+    local function anyPart(inst)
+        if inst:IsA("BasePart") then return inst end
+        return inst:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    task.spawn(function()
+        while hubAlive do
+            task.wait(0.1)
+            if not solvingPaintings then continue end
+
+            local models = findModelsFolder()
+            if not models then finish("Painting puzzle not found."); continue end
+
+            local list = models:GetChildren()
+            table.sort(list, function(a, b)
+                local na, nb = tonumber(a.Name), tonumber(b.Name)
+                if na and nb then return na < nb end
+                return a.Name < b.Name
+            end)
+
+            local first = list[1] and anyPart(list[1])
+            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if first and hrp and not nearPart(first) then
+                hrp.CFrame = CFrame.new(findSafeSpotNear(first))
+                task.wait(0.5)
+            end
+
+            local failed = 0
+            for _, model in ipairs(list) do
+                if not solvingPaintings then break end
+                if isSolved(model) then continue end
+                local cds = getCDs(model)
+                if #cds == 0 then
+                    failed += 1
+                    continue
+                end
+                local t0 = tick()
+                while solvingPaintings and model.Parent and not isSolved(model) do
+                    for _, cd in ipairs(cds) do
+                        if cd.Parent then pcall(fireclickdetector, cd, 10) end
+                    end
+                    task.wait(0.3)
+                    if tick() - t0 > 20 then
+                        failed += 1
+                        break
+                    end
+                end
+            end
+
+            if solvingPaintings then
+                finish(failed == 0 and "Paintings solved." or ("Paintings done, " .. failed .. " failed."))
+            end
+        end
+    end)
+end
 
 grpFarming:AddToggle("FarmCandy",     { Text = "Farm Candy (TP to)", Default = false, Callback = function(v) farmingCandy      = v end })
 grpFarming:AddToggle("FarmCandyPull", { Text = "Farm Candy (Pull)",  Default = false, Callback = function(v) farmingCandyPull  = v end })
@@ -1713,9 +1862,14 @@ grpFarming:AddToggle("FarmGhosts",    { Text = "Farm Ghosts",        Default = f
 grpFarmingQuidz:AddToggle("FarmQuidz",       { Text = "Quidz Farm",        Default = false, Callback = function(v) farmingQuidz       = v end })
 grpFarmingQuidz:AddToggle("FarmHiddenQuidz", { Text = "Hidden Quidz Farm", Default = false, Callback = function(v) farmingHiddenQuidz = v end })
 
+local masteryQuidzWhenDead = false
 grpMasteryFarm:AddToggle("MasteryFarm", {
     Text = "Mastery Farm", Default = false,
     Callback = function(v) masteryFarming = v end,
+})
+grpMasteryFarm:AddToggle("MasteryQuidzWhenDead", {
+    Text = "Quidz Farm When Dead", Default = false,
+    Callback = function(v) masteryQuidzWhenDead = v end,
 })
 
 grpBadges:AddButton({
@@ -1811,15 +1965,7 @@ grpVisuals:AddToggle("BigHeadMode", {
     Text = "Big Head Mode", Default = false,
     Callback = function(v)
         bigHeadMode = v
-        if not v then
-            for _, p in ipairs(Players:GetPlayers()) do
-                local char = p.Character
-                if char then
-                    local head = char:FindFirstChild("Head")
-                    if head then head.Size = Vector3.new(2, 1, 1) end
-                end
-            end
-        end
+        if not v then restoreHeads() end
     end,
 })
 
@@ -2210,7 +2356,7 @@ do
     })
 
     task.spawn(function()
-        while true do
+        while hubAlive do
             task.wait(0.3)
             local target = getRageTarget()
             if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
@@ -2235,7 +2381,7 @@ do
     end)
 
     task.spawn(function()
-        while true do
+        while hubAlive do
             task.wait(0.05)
             if X.candyPriorityOn then
                 local priorityNames = { "Candy_25", "Candy_10", "Candy_5", "Candy_1" }
@@ -2262,7 +2408,7 @@ do
     end)
 
     task.spawn(function()
-        while true do
+        while hubAlive do
             task.wait()
             if X.orbitOn then
                 local hrp = myHrp()
@@ -2279,7 +2425,19 @@ do
         end
     end)
 
-    RunService.RenderStepped:Connect(function()
+    if type(Library.OnUnload) == "function" then
+        Library:OnUnload(function()
+            X.killauraOn = false
+            X.orbitOn = false
+            X.candyPriorityOn = false
+            pcall(function() crosshairH:Remove() end)
+            pcall(function() crosshairV:Remove() end)
+            if X.crosshairOn then UserInputService.MouseIconEnabled = true end
+            X.crosshairOn = false
+        end)
+    end
+
+    hubConnect(RunService.RenderStepped, function()
         if X.crosshairOn then
             UserInputService.MouseIconEnabled = false
             local m = UserInputService:GetMouseLocation()
@@ -2300,7 +2458,7 @@ do
         Text = "Dance Speed", Min = 0.1, Max = 10, Default = 1, Increment = 0.1,
         Callback = function(v) danceSpeed = v end,
     })
-    RunService.RenderStepped:Connect(function()
+    hubConnect(RunService.RenderStepped, function()
         local track = currentDanceTrack
         if track and math.abs(track.Speed - danceSpeed) > 0.001 then
             pcall(function() track:AdjustSpeed(danceSpeed) end)
@@ -4097,44 +4255,44 @@ for _, p in ipairs(Players:GetPlayers()) do
     setupSpeedTracker(p)
 end
 
-Players.PlayerAdded:Connect(function(p)
+hubConnect(Players.PlayerAdded, function(p)
     setupESPPlayer(p)
     setupSpeedTracker(p)
     refreshPlayerList()
 end)
-Players.PlayerRemoving:Connect(function(p)
+hubConnect(Players.PlayerRemoving, function(p)
     removeESPPlayer(p)
     removeSpeedTracker(p)
     task.wait(); refreshPlayerList()
 end)
 
-player.CharacterAdded:Connect(setupJumpBypass)
+hubConnect(player.CharacterAdded, setupJumpBypass)
 if player.Character then task.spawn(setupJumpBypass, player.Character) end
 
-workspace.DescendantAdded:Connect(function(v)
+hubConnect(workspace.DescendantAdded, function(v)
     if v:IsA("BasePart") then registerItem(v) end
 end)
-workspace.DescendantRemoving:Connect(function(v)
+hubConnect(workspace.DescendantRemoving, function(v)
     if itemPool[v] then removeItemDrawings(v) end
 end)
 task.spawn(initialItemScan)
-workspace.ChildAdded:Connect(function(child)
+hubConnect(workspace.ChildAdded, function(child)
     if child.Name == "Map" then task.wait(0.5); initialItemScan() end
 end)
 
-player.CharacterAdded:Connect(function()
+hubConnect(player.CharacterAdded, function()
     masteryFarmed = {}
     if balloonEnabled then task.wait(0.5); spawnBalloons() end
 end)
 
-UserInputService.JumpRequest:Connect(function()
+hubConnect(UserInputService.JumpRequest, function()
     if infiniteJump and player.Character then
         local hum = player.Character:FindFirstChildOfClass("Humanoid")
         if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
 end)
 
-player.Idled:Connect(function()
+hubConnect(player.Idled, function()
     if antiAfk then
         VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
         task.wait(0.1)
@@ -4176,16 +4334,18 @@ RunService:BindToRenderStep("Freecam", Enum.RenderPriority.Camera.Value + 2, fun
     camera.CFrame = CFrame.new(freecamCF.Position) * rot
 end)
 
-RunService.RenderStepped:Connect(function(dt)
+hubConnect(RunService.RenderStepped, function(dt)
     local vp    = camera.ViewportSize
     local myHrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 
     if bigHeadMode then
+        local want = Vector3.new(bigHeadSize, bigHeadSize, bigHeadSize)
         for _, p in ipairs(Players:GetPlayers()) do
             local char = p.Character
-            if char then
-                local head = char:FindFirstChild("Head")
-                if head then head.Size = Vector3.new(bigHeadSize, bigHeadSize, bigHeadSize) end
+            local head = char and char:FindFirstChild("Head")
+            if head and head:IsA("BasePart") then
+                if headOrig[head] == nil then headOrig[head] = head.Size end
+                if head.Size ~= want then head.Size = want end
             end
         end
     end
@@ -4468,7 +4628,7 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.1)
         local myHrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if not myHrp then continue end
@@ -4501,7 +4661,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.1)
         if not masteryFarming then continue end
         local team = player.Team
@@ -4544,7 +4704,7 @@ end)
 local farmCandyNames = { "Candy_1", "Candy_10", "Candy_5", "Candy_25" }
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.05)
         if farmingCandy then
             for _, name in ipairs(farmCandyNames) do
@@ -4569,7 +4729,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.05)
         if farmingCandyPull then
             local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -4590,7 +4750,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.05)
         if farmingGhosts then
             local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -4612,7 +4772,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.05)
         if farmingQuidz then
             local ok, quidz = pcall(function()
@@ -4624,7 +4784,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.05)
         if farmingHiddenQuidz then
             local ok, quidz = pcall(function()
@@ -4707,7 +4867,7 @@ task.spawn(function()
         return (target - cur) % #colorOrder
     end
 
-    while true do
+    while hubAlive do
         task.wait(0.05)
         if solvingCC then
             local ok, base = pcall(function()
@@ -4755,7 +4915,6 @@ task.spawn(function()
                             if cd then
                                 local cur  = getCurrentIndex(part)
                                 local need = clicksFrom(cur, targets[i])
-                                print(string.format("[CC] button %d: current=%d target=%d clicks=%d", i, cur, targets[i], need))
                                 for _ = 1, need do
                                     if not solvingCC then break end
                                     fireclickdetector(cd, 10); task.wait(0.15)
@@ -4772,7 +4931,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.05)
         if solvingWire then
             local map = workspace:FindFirstChild("Map")
@@ -4794,30 +4953,34 @@ task.spawn(function()
                     local cd = getCD(part)
                     if cd then cd.MaxActivationDistance = 1e11 end
                 end
-                if #parts > 0 then
+                if #parts > 0 and not nearPart(parts[1]) then
                     local bestSpot = findSafeSpotNear(parts[1])
                     local char     = player.Character
                     if char and char:FindFirstChild("HumanoidRootPart") then
                         char.HumanoidRootPart.CFrame = CFrame.new(bestSpot)
                     end
-                    task.wait(0.5)
+                    task.wait(0.1)
                 end
-                for _, part in ipairs(parts) do
-                    if not solvingWire then break end
-                    local startedAt = tick()
-                    while solvingWire and part.Parent do
-                        local cd = getCD(part)
-                        if not cd then break end
-                        fireclickdetector(cd, 10)
-                        task.wait(0.2)
-                        if tick() - startedAt > 10 then
-                            Library:Notify("Wire part timed out, moving on.", 3)
-                            break
+                local startedAt = tick()
+                while solvingWire do
+                    local pending = 0
+                    for _, part in ipairs(parts) do
+                        if part.Parent then
+                            local cd = getCD(part)
+                            if cd then
+                                pending += 1
+                                pcall(fireclickdetector, cd, 10)
+                            end
                         end
                     end
+                    if pending == 0 then break end
+                    if tick() - startedAt > 10 then
+                        Library:Notify("Wire puzzle timed out, moving on.", 3)
+                        break
+                    end
+                    RunService.Heartbeat:Wait()
                 end
                 if not solvingWire then break end
-                task.wait(0.3)
             end
             solvingWire = false
             Library:Notify("All wire puzzles solved.", 3)
@@ -4826,7 +4989,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.1)
         if squashingThings then
             local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -4840,8 +5003,10 @@ task.spawn(function()
                         if not squashingThings then finished = false; break end
                         hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                         if not hrp then finished = false; break end
-                        hrp.CFrame = part.CFrame + Vector3.new(0, 3, 0)
-                        task.wait(0.5)
+                        if not nearPart(part, 6) then
+                            hrp.CFrame = part.CFrame + Vector3.new(0, 3, 0)
+                            task.wait(0.5)
+                        end
                         local ti = part:FindFirstChildOfClass("TouchInterest")
                         if ti then
                             firetouchinterest(hrp, part, 0); task.wait(0.05)
@@ -4856,7 +5021,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
+    while hubAlive do
         task.wait(0.1)
         if smokingThings then
             local ok, smokeFolder = pcall(function()
@@ -4868,7 +5033,7 @@ task.spawn(function()
                     local hrp  = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                     if not hrp then break end
                     local root = model:FindFirstChildOfClass("BasePart") or model.PrimaryPart
-                    if root then hrp.CFrame = root.CFrame + Vector3.new(0, 3, 0); task.wait(0.5) end
+                    if root and not nearPart(root) then hrp.CFrame = root.CFrame + Vector3.new(0, 3, 0); task.wait(0.5) end
                     while smokingThings do
                         local cd = getCD(model)
                         if not cd then break end
@@ -4885,6 +5050,14 @@ end)
 
 task.spawn(function()
     local masteryOwnsDance = false
+    local quidzOwned = false
+
+    local function releaseQuidz()
+        if quidzOwned then
+            farmingQuidz = false
+            quidzOwned = false
+        end
+    end
 
     local function masteryDance()
         if currentDanceTrack then return end
@@ -4901,15 +5074,26 @@ task.spawn(function()
         while flag() and tick() - t < (limit or 30) do task.wait(0.2) end
     end
 
-    while true do
+    while hubAlive do
         task.wait(0.1)
         if not masteryFarming then
             if masteryOwnsDance and currentDanceTrack then stopDance() end
             masteryOwnsDance = false
+            releaseQuidz()
             continue
         end
 
         local team = player.Team
+        if masteryQuidzWhenDead and team and team.Name == "Waiting" then
+            if not farmingQuidz then
+                farmingQuidz = true
+                quidzOwned = true
+            end
+            task.wait(1)
+            continue
+        end
+        releaseQuidz()
+
         if not team or team.Name ~= "Survivors" then
             task.wait(3)
             continue
@@ -4921,8 +5105,10 @@ task.spawn(function()
         local hasMem    = puzzleActive("Memory")
         local hasSquash = puzzleActive("PinkSquash")
         local hasSmoke  = puzzleActive("Smoke")
+        local hasPainting = puzzleActive("Painting")
 
-        if not hasCC and not hasWire and not hasAltar and not hasMem and not hasSquash and not hasSmoke then
+        if not hasCC and not hasWire and not hasAltar and not hasMem
+            and not hasSquash and not hasSmoke and not hasPainting then
             masteryDance()
             task.wait(3)
             continue
@@ -4964,6 +5150,15 @@ task.spawn(function()
             task.wait(1)
             if not masteryFarming then continue end
         end
+
+        if hasPainting then
+            solvingPaintings = true
+            waitForResult(function() return solvingPaintings end, 150)
+            solvingPaintings = false
+            masteryFarmed["Painting"] = true
+            task.wait(1)
+            if not masteryFarming then continue end
+        end
         if hasAltar then
             local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if hrp then
@@ -4979,7 +5174,9 @@ task.spawn(function()
                     local baseDet = altar:WaitForChild("Base",10):WaitForChild("Detect",10)
                     hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                     if not hrp then return end
-                    hrp.CFrame = CFrame.new(baseDet.Position)
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+                    hrp.AssemblyAngularVelocity = Vector3.zero
+                    hrp.CFrame = CFrame.new(baseDet.Position + Vector3.new(0, 10, 0)) * hrp.CFrame.Rotation
                     task.wait(0.1)
                     firetouchinterest(hrp, baseDet, 0)
                     task.wait(0.1)
@@ -4992,43 +5189,58 @@ task.spawn(function()
         end
 
         if hasMem then
-            local memDone = false
-            task.spawn(function()
-                local ok, memGui = pcall(function()
-                    return player.PlayerGui:WaitForChild("MemoryQuestion", 15)
-                end)
-                if not ok or not memGui then memDone = true; return end
-                local evOk, evVal = pcall(function()
-                    return memGui:WaitForChild("Event", 5):WaitForChild("Value", 5)
-                end)
-                if not evOk or not evVal then memDone = true; return end
-                local conn
-                conn = evVal.OnClientEvent:Connect(function(action, data)
-                    if action == "Code" then
-                        conn:Disconnect()
-                        task.wait(2.3)
-                        pcall(function() evVal:FireServer("Code", data) end)
-                        memDone = true
-                    end
-                end)
-                local t = tick()
-                while not memDone and tick() - t < 30 do task.wait(0.2) end
-                if conn.Connected then conn:Disconnect() end
-                memDone = true
-            end)
-            local hrp2 = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if hrp2 then
-                pcall(function()
-                    local d1 = workspace:WaitForChild("Map",10):WaitForChild("Memory",10):WaitForChild("Item",10):WaitForChild("Detect",10)
-                    if (hrp2.Position - d1.Position).Magnitude > 10 then teleportTo(d1); task.wait(0.5) end
-                    local d2 = workspace:WaitForChild("Map",10):WaitForChild("Memory",10):WaitForChild("Base",10):WaitForChild("Detect",10)
-                    if (hrp2.Position - d2.Position).Magnitude > 10 then teleportTo(d2) end
-                end)
-            end
-            local mt = tick()
-            while not memDone and tick() - mt < 35 do task.wait(0.2) end
+            solveMemoryGame()
             masteryFarmed["Memory"] = true
             task.wait(1)
         end
     end
 end)
+
+if type(Library.OnUnload) == "function" then
+    Library:OnUnload(function()
+        if not hubAlive then return end
+        hubAlive = false
+
+        espEnabled, itemEspEnabled, playerSpeedLabels = false, false, false
+        flyEnabled, noclipEnabled, infiniteJump, infiniteStamina, antiAfk = false, false, false, false, false
+        spinEnabled, seizureMode = false, false
+        rageEnabled, rageKillAura = false, false
+        solvingCC, solvingWire, solvingPaintings = false, false, false
+        squashingThings, smokingThings = false, false
+        farmingCandy, farmingCandyPull, farmingGhosts = false, false, false
+        farmingQuidz, farmingHiddenQuidz, masteryFarming = false, false, false
+
+        for _, c in ipairs(hubConns) do pcall(function() c:Disconnect() end) end
+        hubConns = {}
+
+        for _, name in ipairs({ "FOVOverride", "FullbrightLoop", "Freecam" }) do
+            pcall(function() RunService:UnbindFromRenderStep(name) end)
+        end
+
+        if freecamEnabled then
+            freecamEnabled = false
+            pcall(function()
+                camera.CameraType = Enum.CameraType.Custom
+                UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+            end)
+        end
+
+        local char = player.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then pcall(function() hum.PlatformStand = false end) end
+
+        bigHeadMode = false
+        restoreHeads()
+
+        if balloonEnabled then
+            balloonEnabled = false
+            pcall(removeAllBalloons)
+        end
+
+        pcall(stopDance)
+
+        for p in pairs(espObjects) do removeESPPlayer(p) end
+        for part in pairs(itemPool) do removeItemDrawings(part) end
+        for p in pairs(speedTrackers) do removeSpeedTracker(p) end
+    end)
+end
